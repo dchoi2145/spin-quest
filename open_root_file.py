@@ -3,12 +3,7 @@ import uproot
 import time
 import os
 
-run_data = np.array([])
-initial_size = 0
-
 def is_file_still_writing(file_path, interval=2):
-
-    global initial_size
 
     initial_size = os.path.getsize(file_path)
 
@@ -21,7 +16,7 @@ def is_file_still_writing(file_path, interval=2):
 
 def store_data(file_path):
 
-    global run_data
+    run_data = np.array([])
 
     if is_file_still_writing(file_path, 2):
         print("File is still being written to. Exiting the function.")
@@ -37,7 +32,7 @@ def store_data(file_path):
 
 if __name__ == "__main__":
     store_data('Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root')
-    print(run_data)
+    print(store_data)
 
 
 
