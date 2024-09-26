@@ -1,40 +1,44 @@
 import numpy as np 
 import uproot
 import time
+import os
 
 run_data = np.array([])
+initial_size = 0
 
-def store_data(filepath):
+def is_file_still_writing(file_path, interval=2):
+
+    global initial_size
+
+    initial_size = os.path.getsize(file_path)
+
+    time.sleep(interval)
+
+    new_size = os.path.getsize(file_path)
+
+    return initial_size != new_size
+
+
+def store_data(file_path):
 
     global run_data
 
-    DY_tree = uproot.open(filepath)["save;1"]
+    if is_file_still_writing(file_path, 2):
+        print("File is still being written to. Exiting the function.")
+        return
 
-    
+    DY_tree = uproot.open(file_path)["save;1"]
 
     detID = DY_tree["rawEvent/fAllHits/fAllHits.detectorID"].array(library="np")
-
     elemID = DY_tree["rawEvent/fAllHits/fAllHits.elementID"].array(library="np")
-
     drift = DY_tree["rawEvent/fAllHits/fAllHits.driftDistance"].array(library="np")
 
-    #gpx = DY_tree["gpx"].arrays(library="np")["gpx"]
-    #gpy = DY_tree["gpy"].arrays(library="np")["gpy"]
-    #gpz = DY_tree["gpz"].arrays(library="np")["gpz"]
-
-    #gvx = DY_tree["gvx"].arrays(library="np")["gvx"]
-    #gvy = DY_tree["gvy"].arrays(library="np")["gvy"]
-    #gvz = DY_tree["gvz"].arrays(library="np")["gvz"]
-
-    #run_data = np.array([gpx, gpy, gpz, gvx, gvy, gvz])
     run_data = np.array([detID, elemID, drift])
 
-#DY_tree = uproot.open('Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root')["save;1"]
-#print("Branches:", DY_tree.keys())
+if __name__ == "__main__":
+    store_data('Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root')
+    print(run_data)
 
-store_data('Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root')
-#print(run_data[0])
-print(uproot.open('/home/uvaspin/Jay/run_data/run_005593/run_005593_spill_001903711_sraw.root').closed)
 
 
 
