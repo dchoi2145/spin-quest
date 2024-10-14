@@ -30,7 +30,7 @@ def store_data(file_path):
 
     # Open the Root file
     DY_tree = uproot.open(file_path)["save;1"]
-
+    
     # Store these values into the variables so we can put them into the Array
     detID = DY_tree["rawEvent/fAllHits/fAllHits.detectorID"].array(library="np")
     elemID = DY_tree["rawEvent/fAllHits/fAllHits.elementID"].array(library="np")
@@ -39,9 +39,45 @@ def store_data(file_path):
     # Store these values into the NumPy Array that we created earlier
     run_data = np.array([detID, elemID, drift])
 
+# Function that reads event data from a ROOT file
+def read_event(file_path, event_number):
+    # Open the ROOT file
+    file = uproot.open(file_path + ":save")
+
+    # Print the number of events during run
+    print(len(file["fAllHits.detectorID"].array(library="np")))
+
+    # Get the array of detector IDs for the given event number
+    detectorid = file["fAllHits.detectorID"].array(library="np")[event_number]
+
+    # Get the array of element IDs for the given event number
+    elementid = file["fAllHits.elementID"].array(library="np")[event_number]
+
+    # Manually close the file
+    file.close()
+
+    # Return both arrays: detector IDs and element IDs
+    return detectorid, elementid
+
+
 if __name__ == "__main__":
-    store_data('Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root')
-    print(store_data)
+    # store_data('Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root')
+    #print(store_data)
+    
+    # Call the read_event function, passing the file path and event number
+    file_path = 'Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
+    event_number = 3000
+
+    # Read and print the event data
+    detectorid, elementid = read_event(file_path, event_number)
+    print(f"Detector IDs: {detectorid}")
+    print(f"Element IDs: {elementid}")
+
+
+    
+        
+
+
 
 
 
