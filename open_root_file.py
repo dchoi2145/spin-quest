@@ -82,7 +82,7 @@ if __name__ == "__main__":
     #print(store_data)
     
     # Call the read_event function, passing the file path and event number
-    file_path = 'Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
+    file_path = '~/Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
     event_number = 3000
 
     # Read and print the event data

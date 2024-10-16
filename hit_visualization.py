@@ -1,5 +1,7 @@
 import tkinter as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from open_root_file import read_event
+from plot import create_heatmap, display_heatmap
 import matplotlib.pyplot as plt
 
 # Initialize the main application window
@@ -72,6 +74,10 @@ def toggle_menu():
                     "relief": "flat", "highlightthickness": 0}
 
     # List of button labels and associated content or graphs
+    fp = '~/Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
+    en = 3000
+    d, e = read_event(fp, en)
+    fig = create_heatmap(d, e)
     button_info = [
         ("Station1", "Information about Station 1", None),
         ("Station2", "Details of Station 2", None),
@@ -85,7 +91,7 @@ def toggle_menu():
         ("Prop1", "Properties related to Prop 1", None),
         ("Prop2", "Explanation for Prop 2", None),
         ("Prop3", "Summary of Prop 3", None),
-        ("Graph Example", None, plot_sample_graph())  # Displays a graph
+        ("Graph Example", "Yay", None)  # Displays a graph
     ]
 
     # Create buttons dynamically and add padding
@@ -94,7 +100,7 @@ def toggle_menu():
         # Create the button first
         button = tk.Button(toggle_menu_fm, text=label, **button_style)
         # Set the command separately to capture the button reference and content/graph correctly
-        button.config(command=lambda b=button, c=content, g=graph: highlight_button(b, c, g))
+        button.config(command=lambda b=button, c=content, g=graph: (highlight_button(b, c, g), display_heatmap(create_heatmap(), content_frame)))
         button.place(x=20, y=y_position, width=160, height=40)  # Increased height for better spacing
         y_position += 60  # Increase y-position for the next button to add spacing
 
@@ -107,30 +113,31 @@ def toggle_menu():
     toggle_btn.config(text="☰")
     toggle_btn.config(command=collapse_toggle_menu)
 
-# Create a frame for the header at the top of the window
-head_frame = tk.Frame(root, bg="#2C3E50", 
-                      highlightbackground="white", highlightthickness=1)
+if __name__ == "__main__":
+    # Create a frame for the header at the top of the window
+    head_frame = tk.Frame(root, bg="#2C3E50", 
+                        highlightbackground="white", highlightthickness=1)
 
-# Create the toggle button to open the menu
-toggle_btn = tk.Button(head_frame, text="☰", bg="#2C3E50", fg="white",
-                       font=("Bold", 20), bd=0, 
-                       activebackground="#2C3E50", activeforeground="white",
-                       command=toggle_menu)
-toggle_btn.pack(side=tk.LEFT, padx=10)  # Add some padding to the left
+    # Create the toggle button to open the menu
+    toggle_btn = tk.Button(head_frame, text="☰", bg="#2C3E50", fg="white",
+                        font=("Bold", 20), bd=0, 
+                        activebackground="#2C3E50", activeforeground="white",
+                        command=toggle_menu)
+    toggle_btn.pack(side=tk.LEFT, padx=10)  # Add some padding to the left
 
-# Create a label to display the title
-title_lb = tk.Label(head_frame, text="Stations", bg="#2C3E50", fg="white",
-                    font=("Bold", 20))
-title_lb.pack(side=tk.LEFT, padx=10)  # Add padding between the toggle button and the title
+    # Create a label to display the title
+    title_lb = tk.Label(head_frame, text="Stations", bg="#2C3E50", fg="white",
+                        font=("Bold", 20))
+    title_lb.pack(side=tk.LEFT, padx=10)  # Add padding between the toggle button and the title
 
-# Configure the header frame and add it to the top of the window
-head_frame.pack(side=tk.TOP, fill=tk.X)
-head_frame.pack_propagate(False) 
-head_frame.configure(height=50)
+    # Configure the header frame and add it to the top of the window
+    head_frame.pack(side=tk.TOP, fill=tk.X)
+    head_frame.pack_propagate(False) 
+    head_frame.configure(height=50)
 
-# Create the content frame for displaying information
-content_frame = tk.Frame(root, bg="#F0F2F5")
-content_frame.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
+    # Create the content frame for displaying information
+    content_frame = tk.Frame(root, bg="#F0F2F5")
+    content_frame.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
 
-# Start the main loop for the Tkinter application
-root.mainloop()
+    # Start the main loop for the Tkinter application
+    root.mainloop()
