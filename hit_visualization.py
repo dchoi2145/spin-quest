@@ -102,7 +102,7 @@ def toggle_menu():
         # Create the button first
         button = tk.Button(toggle_menu_fm, text=label, **button_style)
         # Set the command separately to capture the button reference and content/graph correctly
-        button.config(command=lambda b=button, c=content, g=graph: (highlight_button(b, c, g), display_heatmap(create_heatmap(), content_frame)))
+        button.config(command=lambda b=button, c=content, g=graph: (highlight_button(b, c, g), display_heatmap(create_heatmap(d, e), content_frame)))
         button.place(x=20, y=y_position, width=160, height=40)  # Increased height for better spacing
         y_position += 60  # Increase y-position for the next button to add spacing
 
