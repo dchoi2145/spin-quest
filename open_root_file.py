@@ -41,23 +41,40 @@ def store_data(file_path):
 
 # Function that reads event data from a ROOT file
 def read_event(file_path, event_number):
-    # Open the ROOT file
+    # Open the ROOT file and access the relevant tree
     file = uproot.open(file_path + ":save")
 
-    # Print the number of events during run
-    print(len(file["fAllHits.detectorID"].array(library="np")))
-
     # Get the array of detector IDs for the given event number
-    detectorid = file["fAllHits.detectorID"].array(library="np")[event_number]
+    detector_id = file["fAllHits.detectorID"].array(library="np")[event_number]
 
     # Get the array of element IDs for the given event number
-    elementid = file["fAllHits.elementID"].array(library="np")[event_number]
+    element_id = file["fAllHits.elementID"].array(library="np")[event_number]
+
+    # Initialize lists to store hits
+    hits_detector_ids = []
+    hits_element_ids = []
+
+    # Iterate over unique detectors in the current event
+    for detector in np.unique(detector_id):
+        # Get the elements for this specific detector
+        elements_for_detector = element_id[detector_id == detector]
+
+        # Iterate over elements actually recorded for this detector
+        for element in elements_for_detector:
+            # Since each element in 'elements_for_detector' is part of a hit, we log it as a hit
+            hits_detector_ids.append(detector)
+            hits_element_ids.append(element)
+            print(f"Hit detected for detector ID {detector} at element {element}")
 
     # Manually close the file
     file.close()
 
-    # Return both arrays: detector IDs and element IDs
-    return detectorid, elementid
+    # Convert lists to numpy arrays for returning
+    hits_detector_ids = np.array(hits_detector_ids)
+    hits_element_ids = np.array(hits_element_ids)
+
+    # Return both arrays: detected hits for detector IDs and element IDs
+    return hits_detector_ids, hits_element_ids
 
 
 if __name__ == "__main__":
@@ -69,9 +86,10 @@ if __name__ == "__main__":
     event_number = 3000
 
     # Read and print the event data
-    detectorid, elementid = read_event(file_path, event_number)
-    print(f"Detector IDs: {detectorid}")
-    print(f"Element IDs: {elementid}")
+    detector_id, element_id = read_event(file_path, event_number)
+    print(f"Processed Event Number {event_number}")
+    print(f"Detector IDs: {detector_id}")
+    print(f"Element IDs: {element_id}")
 
 
     
