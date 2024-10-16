@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 # Initialize the main application window
 root = tk.Tk()
-root.geometry("1920x10git80")  # Set the window size to 1920x1080 pixels
+root.geometry("1920x1080")  # Set the window size to 1920x1080 pixels
 root.title("Station")  # Set the window title
 root.configure(bg="#F0F2F5")  # Set the background color to light gray
 
