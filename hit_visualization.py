@@ -3,6 +3,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from open_root_file import read_event
 from plot import create_heatmap, display_heatmap
 import matplotlib.pyplot as plt
+import sys
 
 # Initialize the main application window
 root = tk.Tk()
@@ -74,7 +75,8 @@ def toggle_menu():
                     "relief": "flat", "highlightthickness": 0}
 
     # List of button labels and associated content or graphs
-    fp = '~/Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
+    fp = sys.argv[1]
+    #fp = '~/Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
     en = 3000
     d, e = read_event(fp, en)
     fig = create_heatmap(d, e)
