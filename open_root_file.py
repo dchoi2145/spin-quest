@@ -64,7 +64,6 @@ def read_event(file_path, event_number):
             # Since each element in 'elements_for_detector' is part of a hit, we log it as a hit
             hits_detector_ids.append(detector)
             hits_element_ids.append(element)
-            print(f"Hit detected for detector ID {detector} at element {element}")
 
     # Manually close the file
     file.close()

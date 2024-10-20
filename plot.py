@@ -13,7 +13,6 @@ def create_heatmap(detector_ids, element_ids):
     data = {'Detector': detector_ids,
             'Element': element_ids,
             'Hit': [1] * len(detector_ids)}
-
     df = pd.DataFrame(data)
 
     # Pivot the data to create a matrix for the heatmap

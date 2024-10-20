@@ -1,9 +1,34 @@
 import tkinter as tk
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from open_root_file import read_event
 from plot import create_heatmap, display_heatmap
 import matplotlib.pyplot as plt
 import sys
+
+# Define station mappings
+station_mappings = {
+    "Station1": (0, 5),
+    "Hodoscope1": (6, 9),
+    "DP-1": (10, 13),
+    "Station2": (14, 19),
+    "Hodoscope2": (20, 23),
+    "DP-2": (24, 27),  # Corrected range
+    "Station3 +": (28, 33),
+    "Station3 -": (34, 39),
+    "Hodoscope3": (40, 41),
+    "Prop1": (42, 43),
+    "Hodoscope4": (44, 45),
+    "Prop2": (46, 47),
+    "Hodoscope5": (48, 51),
+    "Prop3": (52, 55)
+}
+
+def organize_hits_by_station(detector_ids, element_ids):
+    station_hits = {}
+    for station, (start, end) in station_mappings.items():
+        station_detector_ids = detector_ids[(detector_ids >= start) & (detector_ids <= end)]
+        station_element_ids = element_ids[(detector_ids >= start) & (detector_ids <= end)]
+        station_hits[station] = (station_detector_ids, station_element_ids)
+    return station_hits
 
 # Initialize the main application window
 root = tk.Tk()
@@ -14,7 +39,7 @@ root.configure(bg="#F0F2F5")  # Set the background color to light gray
 selected_button = None  # Variable to keep track of the currently selected button
 content_frame = None    # Frame for displaying the content
 
-def display_content(content_text=None, graph=None):
+def display_content(content_text=None):
     """Updates the content frame with new information or a graph."""
     global content_frame
 
@@ -27,22 +52,7 @@ def display_content(content_text=None, graph=None):
         content_label = tk.Label(content_frame, text=content_text, font=("Arial", 16), bg="#F0F2F5", fg="black")
         content_label.pack(padx=20, pady=20)
 
-    if graph:
-        # Display the graph using Matplotlib's FigureCanvasTkAgg
-        canvas = FigureCanvasTkAgg(graph, master=content_frame)
-        canvas.draw()
-        canvas.get_tk_widget().pack(padx=20, pady=20)
-
-def plot_sample_graph():
-    """Creates a sample Matplotlib graph and returns the figure."""
-    fig, ax = plt.subplots(figsize=(5, 4))
-    ax.plot([1, 2, 3, 4], [10, 20, 25, 30])  # Sample data
-    ax.set_title("Sample Graph")
-    ax.set_xlabel("X Axis")
-    ax.set_ylabel("Y Axis")
-    return fig
-
-def highlight_button(button, content_text=None, graph=None):
+def highlight_button(button, content_text=None):
     """Highlights the selected button, resets the previous selection, and displays new content."""
     global selected_button
     # Reset the previous selected button's background if there is one
@@ -54,7 +64,7 @@ def highlight_button(button, content_text=None, graph=None):
     selected_button = button  # Update the selected button variable
 
     # Display the content for the selected button
-    display_content(content_text, graph)
+    display_content(content_text)
 
 def toggle_menu():
     """Displays or hides the toggle menu when the menu button is clicked."""
@@ -79,30 +89,21 @@ def toggle_menu():
     #fp = '~/Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
     en = 3000
     d, e = read_event(fp, en)
-    fig = create_heatmap(d, e)
+    organized = organize_hits_by_station(d, e)
     button_info = [
-        ("Station1", "Information about Station 1", None),
-        ("Station2", "Details of Station 2", None),
-        ("Station3 +", "Data related to Station 3 +", None),
-        ("Station3 -", "Information for Station 3 -", None),
-        ("Hodoscope1", "Hodoscope 1 analysis", None),
-        ("Hodoscope2", "Hodoscope 2 details", None),
-        ("Hodoscope3", "Hodoscope 3 description", None),
-        ("DP-1", "Details about DP-1", None),
-        ("DP-2", "Information for DP-2", None),
-        ("Prop1", "Properties related to Prop 1", None),
-        ("Prop2", "Explanation for Prop 2", None),
-        ("Prop3", "Summary of Prop 3", None),
-        ("Graph Example", "Yay", None)  # Displays a graph
+        (station, station) for station in station_mappings.keys()
     ]
 
     # Create buttons dynamically and add padding
     y_position = 20
-    for label, content, graph in button_info:
+    for label, content in button_info:
         # Create the button first
         button = tk.Button(toggle_menu_fm, text=label, **button_style)
         # Set the command separately to capture the button reference and content/graph correctly
-        button.config(command=lambda b=button, c=content, g=graph: (highlight_button(b, c, g), display_heatmap(create_heatmap(d, e), content_frame)))
+        button.config(command=lambda b=button, c=content, label=label: (
+            highlight_button(b, c),
+            display_heatmap(create_heatmap(organized[label][0], organized[label][1]), content_frame)
+        ))
         button.place(x=20, y=y_position, width=160, height=40)  # Increased height for better spacing
         y_position += 60  # Increase y-position for the next button to add spacing
 
