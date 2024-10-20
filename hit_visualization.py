@@ -4,8 +4,10 @@ from plot import create_heatmap, display_heatmap
 import matplotlib.pyplot as plt
 import sys
 
-# Define station mappings
-station_mappings = {
+# CONSTANTS
+TOGGLE_MENU_OFFSET = 50
+BTN_HEIGHT = 40
+STATION_MAPPINGS = {
     "Station1": (0, 5),
     "Hodoscope1": (6, 9),
     "DP-1": (10, 13),
@@ -21,14 +23,7 @@ station_mappings = {
     "Hodoscope5": (48, 51),
     "Prop3": (52, 55)
 }
-
-def organize_hits_by_station(detector_ids, element_ids):
-    station_hits = {}
-    for station, (start, end) in station_mappings.items():
-        station_detector_ids = detector_ids[(detector_ids >= start) & (detector_ids <= end)]
-        station_element_ids = element_ids[(detector_ids >= start) & (detector_ids <= end)]
-        station_hits[station] = (station_detector_ids, station_element_ids)
-    return station_hits
+EN = 3000
 
 # Initialize the main application window
 root = tk.Tk()
@@ -38,6 +33,14 @@ root.configure(bg="#F0F2F5")  # Set the background color to light gray
 
 selected_button = None  # Variable to keep track of the currently selected button
 content_frame = None    # Frame for displaying the content
+
+def organize_hits_by_station(detector_ids, element_ids):
+    station_hits = {}
+    for station, (start, end) in STATION_MAPPINGS.items():
+        station_detector_ids = detector_ids[(detector_ids >= start) & (detector_ids <= end)]
+        station_element_ids = element_ids[(detector_ids >= start) & (detector_ids <= end)]
+        station_hits[station] = (station_detector_ids, station_element_ids)
+    return station_hits
 
 def display_content(content_text=None):
     """Updates the content frame with new information or a graph."""
@@ -86,16 +89,16 @@ def toggle_menu():
 
     # List of button labels and associated content or graphs
     fp = sys.argv[1]
-    #fp = '~/Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
-    en = 3000
-    d, e = read_event(fp, en)
+    d, e = read_event(fp, EN)
     organized = organize_hits_by_station(d, e)
     button_info = [
-        (station, station) for station in station_mappings.keys()
+        (station, station) for station in STATION_MAPPINGS.keys()
     ]
 
     # Create buttons dynamically and add padding
-    y_position = 20
+    window_height = root.winfo_height() - TOGGLE_MENU_OFFSET # Get the current window height
+    gap = (window_height - len(button_info) * BTN_HEIGHT) / (len(button_info) + 1)
+    y_position = gap
     for label, content in button_info:
         # Create the button first
         button = tk.Button(toggle_menu_fm, text=label, **button_style)
@@ -104,13 +107,11 @@ def toggle_menu():
             highlight_button(b, c),
             display_heatmap(create_heatmap(organized[label][0], organized[label][1]), content_frame)
         ))
-        button.place(x=20, y=y_position, width=160, height=40)  # Increased height for better spacing
-        y_position += 60  # Increase y-position for the next button to add spacing
-
-    window_height = root.winfo_height()  # Get the current window height
+        button.place(x=20, y=y_position, width=160, height=BTN_HEIGHT)  # Increased height for better spacing
+        y_position += BTN_HEIGHT + gap  # Increase y-position for the next button to add spacing
 
     # Position the menu frame on the left side of the window
-    toggle_menu_fm.place(x=0, y=50, height=window_height, width=200)
+    toggle_menu_fm.place(x=0, y=TOGGLE_MENU_OFFSET, height=window_height, width=200)
 
     # Update the toggle button to close the menu when clicked again
     toggle_btn.config(text="☰")
