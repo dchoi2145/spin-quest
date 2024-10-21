@@ -11,7 +11,7 @@ from open_root_file import get_total_spills
 # Global variable for the current event number
 current_event_number = 0
 
-fp = '/Users/davidchoi/Documents/Research-GUI/Jay/run_data/run_005591/run_005591_spill_001903515_sraw.root'
+fp = '~/Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
 
 def create_heatmap(detector_ids, element_ids):
     # Create a DataFrame
