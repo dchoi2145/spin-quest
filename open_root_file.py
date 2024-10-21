@@ -64,6 +64,7 @@ def read_event(file_path, event_number):
             # Since each element in 'elements_for_detector' is part of a hit, we log it as a hit
             hits_detector_ids.append(detector)
             hits_element_ids.append(element)
+            print(f"Hit detected for detector ID {detector} at element {element}")
 
     # Manually close the file
     file.close()
@@ -75,6 +76,19 @@ def read_event(file_path, event_number):
     # Return both arrays: detected hits for detector IDs and element IDs
     return hits_detector_ids, hits_element_ids
 
+def get_total_spills(file_path):
+    # Open the ROOT file and access the relevant tree
+    file = uproot.open(file_path)
+    tree = file["save"]  # Replace "save" with the actual tree name if different
+
+    # Get the number of entries in the tree
+    total_spills = tree.num_entries
+
+    # Close the file
+    file.close()
+
+    return total_spills
+
 
 if __name__ == "__main__":
     # store_data('Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root')
@@ -82,22 +96,11 @@ if __name__ == "__main__":
     
     # Call the read_event function, passing the file path and event number
     file_path = '~/Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
-    event_number = 3000
+
+    event_number = 1
 
     # Read and print the event data
     detector_id, element_id = read_event(file_path, event_number)
     print(f"Processed Event Number {event_number}")
     print(f"Detector IDs: {detector_id}")
     print(f"Element IDs: {element_id}")
-
-
-    
-        
-
-
-
-
-
-
-
-
