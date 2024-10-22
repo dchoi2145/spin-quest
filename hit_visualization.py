@@ -11,7 +11,7 @@ from open_root_file import get_total_spills
 # Global variable for the current event number
 current_event_number = 0
 
-fp = '~/Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
+fp = '/Users/davidchoi/Documents/Research-GUI/Jay/run_data/run_005591/run_005591_spill_001903515_sraw.root'
 
 def create_heatmap(detector_ids, element_ids):
     # Create a DataFrame
@@ -47,9 +47,9 @@ def display_heatmap(fig, content_frame):
     photo = ImageTk.PhotoImage(img)
     
     # Display image in a Label widget
-    label = tk.Label(content_frame, image=photo)
+    label = tk.Label(content_frame, image=photo, bg="#F0F2F5")
     label.image = photo  # Keep a reference to avoid garbage collection
-    label.pack(padx=20, pady=20)
+    label.place(relx=0.5, rely=0.5, anchor="center")
 
 def load_and_display_spill(content_frame, event_number):
     global current_event_number
@@ -85,6 +85,17 @@ def load_and_display_prev_spill(content_frame):
         current_event_number -= 1
     load_and_display_spill(content_frame, current_event_number)
 
+def create_checkbox(frame, text):
+    """Helper function to create a styled checkbox that is initially checked."""
+    var = tk.IntVar(value=1)  # Set initial value to 1 (checked)
+    checkbox = tk.Checkbutton(
+        frame, text=text, variable=var, font=("Arial", 12), bg="#FFFFFF",
+        fg="black", activebackground="#E8EAF6", activeforeground="black",
+        selectcolor="#BBDEFB", anchor="w"
+    )
+    checkbox.pack(fill=tk.X, padx=10, pady=2)
+    return checkbox, var
+
 if __name__ == "__main__":
     # Initialize the main application window
     root = tk.Tk()
@@ -96,27 +107,47 @@ if __name__ == "__main__":
     content_frame = tk.Frame(root, bg="#F0F2F5")
     content_frame.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
 
+    # Create the right frame for checkboxes and place it on the right
+    right_frame = tk.Frame(root, bg="#FFFFFF", bd=2, relief="ridge", padx=15, pady=15)
+    right_frame.place(relx=0.85, rely=0.5, anchor="center")
+
+    # List of stations in the desired order
+    stations = [
+        "Station1", "Hodoscope1", "DP-1", "Station2", "Hodoscope2",
+        "DP-2", "Station3 +", "Station3 -", "Hodoscope3", "Prop1",
+        "Hodoscope4", "Prop2", "Hodoscope5", "Prop3"
+    ]
+
+    # Dictionary to keep track of checkbox variables
+    checkbox_vars = {}
+
+    # Create checkboxes for each station
+    for station in stations:
+        checkbox, var = create_checkbox(right_frame, station)
+        checkbox_vars[station] = var
+
     # Store the selected spill number
     spill_dropdown_var = tk.IntVar(value=current_event_number)
 
+    # Create a frame to hold the spill dropdown and center it
+    dropdown_frame = tk.Frame(root, bg="#F0F2F5")
+    dropdown_frame.pack(pady=10)
+
     # Create a dropdown menu for selecting the spill number
-    spill_dropdown = tk.OptionMenu(root, spill_dropdown_var, *range(1, get_total_spills(fp)), command=lambda x: load_and_display_spill(content_frame, spill_dropdown_var.get()))
+    spill_dropdown = tk.OptionMenu(dropdown_frame, spill_dropdown_var, *range(1, get_total_spills(fp)), command=lambda x: load_and_display_spill(content_frame, spill_dropdown_var.get()))
     spill_dropdown.config(font=("Arial", 12), width=2)
-    spill_dropdown.pack(pady=0)
+    spill_dropdown.pack()
 
     # Create a button frame to organize the buttons side by side
     button_frame = tk.Frame(root, bg="#F0F2F5")
     button_frame.pack(pady=20)
 
     # Create navigation buttons
-    button_frame = tk.Frame(root, bg="#F0F2F5")
-    button_frame.pack(pady=20)
-
-    next_spill_button = tk.Button(button_frame, text="Next Spill", font=("Arial", 16), command=lambda: load_and_display_next_spill(content_frame))
-    next_spill_button.grid(row=0, column=1, padx=10)
-
-    prev_spill_button = tk.Button(button_frame, text="Previous Spill", font=("Arial", 16), command=lambda: load_and_display_prev_spill(content_frame))
+    prev_spill_button = tk.Button(button_frame, text="Previous Spill", font=("Arial", 16), command=lambda: load_and_display_prev_spill(content_frame), bg="#BBDEFB", fg="black", relief="raised")
     prev_spill_button.grid(row=0, column=0, padx=10)
+
+    next_spill_button = tk.Button(button_frame, text="Next Spill", font=("Arial", 16), command=lambda: load_and_display_next_spill(content_frame), bg="#BBDEFB", fg="black", relief="raised")
+    next_spill_button.grid(row=0, column=1, padx=10)
 
     # Load and display the initial spill
     load_and_display_next_spill(content_frame)
