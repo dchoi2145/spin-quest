@@ -1,55 +1,11 @@
 import tkinter as tk
-from PIL import Image, ImageTk
-import numpy as np
-import pandas as pd
-import plotly.express as px
-import plotly.io as pio
-import io
-from open_root_file import read_event
-from open_root_file import get_total_spills
+from open_root_file import read_event, get_total_spills
+from plot import create_heatmap, display_heatmap
 
 # Global variable for the current event number
 current_event_number = 0
 
-fp = '/Users/davidchoi/Documents/Research-GUI/Jay/run_data/run_005591/run_005591_spill_001903515_sraw.root'
-
-def create_heatmap(detector_ids, element_ids):
-    # Create a DataFrame
-    data = {'Detector': detector_ids,
-            'Element': element_ids,
-            'Hit': [1] * len(detector_ids)}
-
-    df = pd.DataFrame(data)
-
-    # Pivot the data to create a matrix for the heatmap
-    heatmap_data = df.pivot_table(index='Element', columns='Detector', values='Hit', fill_value=0)
-    transposed = heatmap_data.T
-
-    # Create heatmap
-    fig = px.imshow(transposed,
-                    labels=dict(x='Element ID', y='Detector', color='Hit'),
-                    x=transposed.columns,
-                    y=transposed.index,
-                    color_continuous_scale='magenta')
-
-    fig.update_layout(title='Hodoscope Hits by Detector',
-                      xaxis_title='Element ID',
-                      yaxis_title='Detector')
-    
-    return fig
-
-def display_heatmap(fig, content_frame):
-    # Convert Plotly figure to image
-    img_bytes = pio.to_image(fig, format='png')
-    
-    # Load image with PIL and convert to PhotoImage for Tkinter
-    img = Image.open(io.BytesIO(img_bytes))
-    photo = ImageTk.PhotoImage(img)
-    
-    # Display image in a Label widget
-    label = tk.Label(content_frame, image=photo, bg="#F0F2F5")
-    label.image = photo  # Keep a reference to avoid garbage collection
-    label.place(relx=0.5, rely=0.5, anchor="center")
+fp = 'D:/Documents/GitHub/spin-quest/run_data/run_005591/run_005591_spill_001903474_sraw.root'
 
 def load_and_display_spill(content_frame, event_number):
     global current_event_number
@@ -154,3 +110,4 @@ if __name__ == "__main__":
 
     # Start the main loop for the Tkinter application
     root.mainloop()
+
