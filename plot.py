@@ -13,11 +13,15 @@ def create_heatmap(detector_ids, element_ids):
     data = {'Detector': detector_ids,
             'Element': element_ids,
             'Hit': [1] * len(detector_ids)}
-
     df = pd.DataFrame(data)
+
+    # Get all unique detector IDs and element IDS
+    all_detector_ids = list(range(56))
+    all_element_ids = list(range(200))
 
     # Pivot the data to create a matrix for the heatmap
     heatmap_data = df.pivot_table(index='Element', columns='Detector', values='Hit', fill_value=0)
+    heatmap_data = heatmap_data.reindex(index=all_element_ids, columns=all_detector_ids, fill_value=0)  # Reindex with all detector IDs and element IDs
     transposed = heatmap_data.T
 
     # Create heatmap
@@ -56,8 +60,9 @@ if __name__ == "__main__":
     print(hits.shape)
 
     # Real data
-    fp = '~/Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root'
-    en = 1
+    fp = 'D:/Documents/GitHub/spin-quest/run_data/run_005591/run_005591_spill_001903474_sraw.root'
+
+    en = 0
     d, e = read_event(fp, en)
 
     # Generate figure
