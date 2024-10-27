@@ -7,6 +7,9 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from open_root_file import read_event
 
+MAX_DETECTOR = 56
+MAX_ELEMENT = 200 
+
 # Function for creating heatmap
 def create_heatmap(detector_ids, element_ids, station_map, stations):
     # Create a DataFrame
@@ -16,8 +19,8 @@ def create_heatmap(detector_ids, element_ids, station_map, stations):
     df = pd.DataFrame(data)
 
     # Get all unique detector IDs and element IDS
-    all_detector_ids = list(range(56))
-    all_element_ids = list(range(200))
+    all_detector_ids = list(range(MAX_DETECTOR))
+    all_element_ids = list(range(MAX_ELEMENT))
 
     # Pivot the data to create a matrix for the heatmap
     heatmap_data = df.pivot_table(index='Element', columns='Detector', values='Hit', fill_value=0)
