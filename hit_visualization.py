@@ -19,8 +19,11 @@ def load_and_display_spill(content_frame, event_number):
     # Read the spill data
     d, e = read_event(fp, current_event_number)
 
-    # Generate a new heatmap
-    fig = create_heatmap(d, e)
+    # Get list of selected stations (where checkbox is checked)
+    selected_stations = [station for station, var in checkbox_vars.items() if var.get() == 1]
+
+    # Generate a new heatmap with selected stations
+    fig = create_heatmap(d, e, station_map, selected_stations)
 
     # Clear the existing content in the content frame
     for widget in content_frame.winfo_children():
@@ -45,13 +48,14 @@ def load_and_display_prev_spill(content_frame):
         current_event_number -= 1
     load_and_display_spill(content_frame, current_event_number)
 
-def create_checkbox(frame, text):
+def create_checkbox(frame, text, command):
     """Helper function to create a styled checkbox that is initially checked."""
     var = tk.IntVar(value=1)  # Set initial value to 1 (checked)
     checkbox = tk.Checkbutton(
         frame, text=text, variable=var, font=("Arial", 12), bg="#FFFFFF",
         fg="black", activebackground="#E8EAF6", activeforeground="black",
-        selectcolor="#BBDEFB", anchor="w"
+        selectcolor="#BBDEFB", anchor="w",
+        command=command  # Add command parameter
     )
     checkbox.pack(fill=tk.X, padx=10, pady=2)
     return checkbox, var
@@ -83,7 +87,12 @@ if __name__ == "__main__":
 
     # Create checkboxes for each station
     for station in stations:
-        checkbox, var = create_checkbox(right_frame, station)
+        # Pass a lambda function that calls load_and_display_spill
+        checkbox, var = create_checkbox(
+            right_frame, 
+            station, 
+            lambda station=station: load_and_display_spill(content_frame, current_event_number)
+        )
         checkbox_vars[station] = var
 
     # Store the selected spill number

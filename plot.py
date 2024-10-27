@@ -8,7 +8,7 @@ from PIL import Image, ImageTk
 from open_root_file import read_event
 
 # Function for creating heatmap
-def create_heatmap(detector_ids, element_ids, station_map, station):
+def create_heatmap(detector_ids, element_ids, station_map, stations):
     # Create a DataFrame
     data = {'Detector': detector_ids,
             'Element': element_ids,
@@ -23,11 +23,19 @@ def create_heatmap(detector_ids, element_ids, station_map, station):
     heatmap_data = df.pivot_table(index='Element', columns='Detector', values='Hit', fill_value=0)
     heatmap_data = heatmap_data.reindex(index=all_element_ids, columns=all_detector_ids, fill_value=0)  # Reindex with all detector IDs and element IDs
 
-    mapping = station_map[station].split(" ")
-    min_detector = int(mapping[0])
-    max_detector = int(mapping[1])
-    mask = ~heatmap_data.columns.isin(range(min_detector, max_detector + 1))
-    heatmap_data.loc[:, mask] = 0
+    # Initialize mask for all detectors as False
+    combined_mask = np.zeros(len(all_detector_ids), dtype=bool)
+    
+    # Combine masks for all specified stations
+    for station in stations:
+        mapping = station_map[station].split(" ")
+        min_detector = int(mapping[0])
+        max_detector = int(mapping[1])
+        station_mask = np.isin(all_detector_ids, range(min_detector, max_detector + 1))
+        combined_mask |= station_mask  # Combine masks using OR operation
+    
+    # Set hits to 0 for detectors outside all specified stations
+    heatmap_data.loc[:, ~combined_mask] = 0
 
     transposed = heatmap_data.T
 
