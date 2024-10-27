@@ -8,7 +8,7 @@ from PIL import Image, ImageTk
 from open_root_file import read_event
 
 # Function for creating heatmap
-def create_heatmap(detector_ids, element_ids):
+def create_heatmap(detector_ids, element_ids, station_map, station):
     # Create a DataFrame
     data = {'Detector': detector_ids,
             'Element': element_ids,
@@ -22,6 +22,13 @@ def create_heatmap(detector_ids, element_ids):
     # Pivot the data to create a matrix for the heatmap
     heatmap_data = df.pivot_table(index='Element', columns='Detector', values='Hit', fill_value=0)
     heatmap_data = heatmap_data.reindex(index=all_element_ids, columns=all_detector_ids, fill_value=0)  # Reindex with all detector IDs and element IDs
+
+    mapping = station_map[station].split(" ")
+    min_detector = int(mapping[0])
+    max_detector = int(mapping[1])
+    mask = ~heatmap_data.columns.isin(range(min_detector, max_detector + 1))
+    heatmap_data.loc[:, mask] = 0
+
     transposed = heatmap_data.T
 
     # Create heatmap
@@ -50,23 +57,3 @@ def display_heatmap(fig, content_frame):
     label = tk.Label(content_frame, image=photo)
     label.image = photo  # Keep a reference to avoid garbage collection
     label.pack(padx=20, pady=20)
-
-if __name__ == "__main__":
-    # Simulate data
-    np.random.seed(0)
-    num_detectors = 6
-    num_slices = 200
-    hits = np.random.randint(0, 2, size=(num_slices, num_detectors))  # 200 hodoscope slices, 6 detectors
-    print(hits.shape)
-
-    # Real data
-    fp = 'D:/Documents/GitHub/spin-quest/run_data/run_005591/run_005591_spill_001903474_sraw.root'
-
-    en = 0
-    d, e = read_event(fp, en)
-
-    # Generate figure
-    fig = create_heatmap(d, e)
-
-    # Show the figure
-    fig.write_image("fig1.png")
