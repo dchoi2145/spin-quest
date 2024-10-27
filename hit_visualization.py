@@ -1,11 +1,15 @@
 import tkinter as tk
 from open_root_file import read_event, get_total_spills
 from plot import create_heatmap, display_heatmap
+import sys
+import json
+
+# File path
+fp = sys.argv[1]
 
 # Global variable for the current event number
-current_event_number = 0
-
-fp = 'D:/Documents/GitHub/spin-quest/run_data/run_005591/run_005591_spill_001903474_sraw.root'
+MIN_EVENT_NUMBER = int(sys.argv[2])
+current_event_number = MIN_EVENT_NUMBER
 
 def load_and_display_spill(content_frame, event_number):
     global current_event_number
@@ -67,12 +71,12 @@ if __name__ == "__main__":
     right_frame = tk.Frame(root, bg="#FFFFFF", bd=2, relief="ridge", padx=15, pady=15)
     right_frame.place(relx=0.85, rely=0.5, anchor="center")
 
+    # Parse stations json
+    with open("detector_map.json", 'r') as infile:
+        station_map = json.load(infile)
+
     # List of stations in the desired order
-    stations = [
-        "Station1", "Hodoscope1", "DP-1", "Station2", "Hodoscope2",
-        "DP-2", "Station3 +", "Station3 -", "Hodoscope3", "Prop1",
-        "Hodoscope4", "Prop2", "Hodoscope5", "Prop3"
-    ]
+    stations = station_map.keys()
 
     # Dictionary to keep track of checkbox variables
     checkbox_vars = {}
@@ -90,7 +94,7 @@ if __name__ == "__main__":
     dropdown_frame.pack(pady=10)
 
     # Create a dropdown menu for selecting the spill number
-    spill_dropdown = tk.OptionMenu(dropdown_frame, spill_dropdown_var, *range(1, get_total_spills(fp)), command=lambda x: load_and_display_spill(content_frame, spill_dropdown_var.get()))
+    spill_dropdown = tk.OptionMenu(dropdown_frame, spill_dropdown_var, *range(MIN_EVENT_NUMBER, get_total_spills(fp)), command=lambda x: load_and_display_spill(content_frame, spill_dropdown_var.get()))
     spill_dropdown.config(font=("Arial", 12), width=2)
     spill_dropdown.pack()
 
@@ -106,7 +110,7 @@ if __name__ == "__main__":
     next_spill_button.grid(row=0, column=1, padx=10)
 
     # Load and display the initial spill
-    load_and_display_next_spill(content_frame)
+    load_and_display_spill(content_frame, current_event_number)
 
     # Start the main loop for the Tkinter application
     root.mainloop()
