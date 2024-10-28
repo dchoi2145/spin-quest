@@ -48,32 +48,46 @@ def load_and_display_prev_spill(content_frame):
         current_event_number -= 1
     load_and_display_spill(content_frame, current_event_number)
 
-def create_checkbox(frame, text, command):
-    """Helper function to create a styled checkbox that is initially checked."""
+def create_checkbox_with_color(frame, text, color, command):
+    """Helper function to create a styled checkbox with a color indicator."""
     var = tk.IntVar(value=1)  # Set initial value to 1 (checked)
+    
+    # Create a frame for the color and checkbox
+    container = tk.Frame(frame, bg="#FFFFFF")
+    container.pack(fill=tk.X, padx=10, pady=2, anchor="w")
+
+    # Create a label with the color
+    color_label = tk.Label(container, bg=color, width=2, height=1, relief="solid")
+    color_label.pack(side=tk.LEFT, padx=5)
+    
+    # Create the checkbox
     checkbox = tk.Checkbutton(
-        frame, text=text, variable=var, font=("Arial", 12), bg="#FFFFFF",
+        container, text=text, variable=var, font=("Arial", 12), bg="#FFFFFF",
         fg="black", activebackground="#E8EAF6", activeforeground="black",
-        selectcolor="#BBDEFB", anchor="w",
-        command=command  # Add command parameter
+        selectcolor="#BBDEFB", anchor="w", command=command
     )
-    checkbox.pack(fill=tk.X, padx=10, pady=2)
+    checkbox.pack(side=tk.LEFT)
+    
     return checkbox, var
 
 if __name__ == "__main__":
     # Initialize the main application window
     root = tk.Tk()
-    root.geometry("1920x1080")  # Set the window size
+    root.geometry("1600x900")  # Set the window size for a larger display
     root.title("Hodoscope Station")  # Set the window title
     root.configure(bg="#F0F2F5")  # Background color
 
-    # Create the content frame for displaying information
-    content_frame = tk.Frame(root, bg="#F0F2F5")
-    content_frame.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
+    # Create the main frame for better layout control and centering
+    main_frame = tk.Frame(root, bg="#F0F2F5")
+    main_frame.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
 
-    # Create the right frame for checkboxes and place it on the right
-    right_frame = tk.Frame(root, bg="#FFFFFF", bd=2, relief="ridge", padx=15, pady=15)
-    right_frame.place(relx=0.85, rely=0.5, anchor="center")
+    # Create the content frame for displaying information, larger size for plot
+    content_frame = tk.Frame(main_frame, bg="#F0F2F5", width=1300, height=800)
+    content_frame.pack(side=tk.LEFT, expand=True, padx=20, pady=20, anchor="center")
+
+    # Create the right frame for checkboxes and align it next to the plot
+    right_frame = tk.Frame(main_frame, bg="#FFFFFF", bd=2, relief="ridge", padx=15, pady=15)
+    right_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=20, pady=20, anchor="center")
 
     # Parse stations json
     with open("detector_map.json", 'r') as infile:
@@ -85,12 +99,16 @@ if __name__ == "__main__":
     # Dictionary to keep track of checkbox variables
     checkbox_vars = {}
 
-    # Create checkboxes for each station
+    # Create checkboxes with color indicators for each station
     for station in stations:
+        # Extract color from station_map
+        color = station_map[station].split(" ")[2]
+        
         # Pass a lambda function that calls load_and_display_spill
-        checkbox, var = create_checkbox(
+        checkbox, var = create_checkbox_with_color(
             right_frame, 
             station, 
+            color,
             lambda station=station: load_and_display_spill(content_frame, current_event_number)
         )
         checkbox_vars[station] = var
@@ -107,7 +125,7 @@ if __name__ == "__main__":
     spill_dropdown.config(font=("Arial", 12), width=2)
     spill_dropdown.pack()
 
-    # Create a button frame to organize the buttons side by side
+    # Create a button frame to organize the buttons side by side and center it
     button_frame = tk.Frame(root, bg="#F0F2F5")
     button_frame.pack(pady=20)
 
@@ -123,4 +141,3 @@ if __name__ == "__main__":
 
     # Start the main loop for the Tkinter application
     root.mainloop()
-
