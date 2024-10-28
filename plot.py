@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import plotly.express as px
+import plotly.graph_objects as go
 import plotly.io as pio
 import io
 import tkinter as tk
@@ -10,49 +10,45 @@ from open_root_file import read_event
 MAX_DETECTOR = 56
 MAX_ELEMENT = 200 
 
-# Function for creating heatmap
-def create_heatmap(detector_ids, element_ids, station_map, stations):
-    # Create a DataFrame
+# Function for creating heatmap with individual station colors
+def create_heatmap(detector_ids, element_ids, station_map, selected_stations):
+    # Create a DataFrame for the hits
     data = {'Detector': detector_ids,
             'Element': element_ids,
             'Hit': [1] * len(detector_ids)}
     df = pd.DataFrame(data)
 
-    # Get all unique detector IDs and element IDS
-    all_detector_ids = list(range(MAX_DETECTOR))
-    all_element_ids = list(range(MAX_ELEMENT))
+    # Initialize an empty figure with a white background
+    fig = go.Figure()
+    fig.update_layout(
+        title="Hodoscope Hits by Detector",
+        xaxis_title="Element ID",
+        yaxis_title="Detector",
+        xaxis=dict(range=[0, MAX_ELEMENT]),
+        yaxis=dict(range=[0, MAX_DETECTOR]),
+        plot_bgcolor="white"
+    )
 
-    # Pivot the data to create a matrix for the heatmap
-    heatmap_data = df.pivot_table(index='Element', columns='Detector', values='Hit', fill_value=0)
-    heatmap_data = heatmap_data.reindex(index=all_element_ids, columns=all_detector_ids, fill_value=0)  # Reindex with all detector IDs and element IDs
-
-    # Initialize mask for all detectors as False
-    combined_mask = np.zeros(len(all_detector_ids), dtype=bool)
-    
-    # Combine masks for all specified stations
-    for station in stations:
+    # Plot each selected station in its unique color
+    for station in selected_stations:
+        # Get the detector range and color for this station
         mapping = station_map[station].split(" ")
         min_detector = int(mapping[0])
         max_detector = int(mapping[1])
-        station_mask = np.isin(all_detector_ids, range(min_detector, max_detector + 1))
-        combined_mask |= station_mask  # Combine masks using OR operation
-    
-    # Set hits to 0 for detectors outside all specified stations
-    heatmap_data.loc[:, ~combined_mask] = 0
+        color = mapping[2]
 
-    transposed = heatmap_data.T
+        # Filter data for the current station's range
+        station_data = df[(df['Detector'] >= min_detector) & (df['Detector'] <= max_detector)]
 
-    # Create heatmap
-    fig = px.imshow(transposed,
-                    labels=dict(x='Element ID', y='Detector', color='Hit'),
-                    x=transposed.columns,
-                    y=transposed.index,
-                    color_continuous_scale='magenta')
+        # Add a scatter trace for this station's data points in its unique color
+        fig.add_trace(go.Scatter(
+            x=station_data['Element'],
+            y=station_data['Detector'],
+            mode='markers',
+            marker=dict(color=color, size=5),
+            name=station
+        ))
 
-    fig.update_layout(title='Hodoscope Hits by Detector',
-                    xaxis_title='Element ID',
-                    yaxis_title='Detector')
-    
     return fig
 
 # Function to display heatmap in GUI
