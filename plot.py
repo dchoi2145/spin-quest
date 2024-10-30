@@ -10,14 +10,6 @@ from open_root_file import read_event
 MAX_DETECTOR = 56
 MAX_ELEMENT = 200 
 
-# Grouping detectors
-DETECTOR_GROUPS = {
-    "Station": ["Station1", "Station2", "Station3 +", "Station3 -"],
-    "Hodoscope": ["Hodoscope1", "Hodoscope2", "Hodoscope3", "Hodoscope4", "Hodoscope5"],
-    "DP": ["DP-1", "DP-2"],
-    "Prop": ["Prop1", "Prop2", "Prop3"]
-}
-
 # Function for creating grouped heatmaps by detector type
 def create_grouped_heatmaps(detector_ids, element_ids, station_map, selected_stations):
     # Create a DataFrame for the hits
@@ -28,7 +20,7 @@ def create_grouped_heatmaps(detector_ids, element_ids, station_map, selected_sta
     figures = {}
 
     # Loop over each group in the defined detector groups
-    for group_name, group_detectors in DETECTOR_GROUPS.items():
+    for group_name, group_detectors in station_map.items():
         # Filter selected stations that belong to the current group
         group_selected_stations = [station for station in group_detectors if station in selected_stations]
         
@@ -40,7 +32,7 @@ def create_grouped_heatmaps(detector_ids, element_ids, station_map, selected_sta
         
         for station in group_selected_stations:
             # Get the detector range and color for this station
-            mapping = station_map[station].split(" ")
+            mapping = station_map[group_name][station].split(" ")
             min_detector = int(mapping[0])
             max_detector = int(mapping[1])
             color = mapping[2]

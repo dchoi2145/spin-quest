@@ -12,14 +12,6 @@ fp = sys.argv[1]
 MIN_EVENT_NUMBER = int(sys.argv[2])
 current_event_number = MIN_EVENT_NUMBER
 
-# Grouping for checkboxes
-DETECTOR_GROUPS = {
-    "Stations": ["Station1", "Station2", "Station3 +", "Station3 -"],
-    "Hodoscopes": ["Hodoscope1", "Hodoscope2", "Hodoscope3", "Hodoscope4", "Hodoscope5"],
-    "DP Detectors": ["DP-1", "DP-2"],
-    "Prop Detectors": ["Prop1", "Prop2", "Prop3"]
-}
-
 def load_and_display_spill(content_frame, event_number):
     global current_event_number
     # Update the current event number
@@ -127,7 +119,7 @@ if __name__ == "__main__":
     checkbox_vars = {}
 
     # Create checkboxes with color indicators for each station group
-    for group_name, detectors in DETECTOR_GROUPS.items():
+    for group_name, detectors in station_map.items():
         # Create group label
         group_label_frame = tk.Frame(right_frame, bg="#F5F5F5")
         group_label_frame.pack(fill=tk.X, padx=5, pady=(15, 5))
@@ -140,7 +132,7 @@ if __name__ == "__main__":
 
         for station in detectors:
             # Extract color from station_map
-            color = station_map[station].split(" ")[2]
+            color = station_map[group_name][station].split(" ")[2]
             
             # Pass a lambda function that calls load_and_display_spill
             checkbox, var = create_checkbox_with_color(
