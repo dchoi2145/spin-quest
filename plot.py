@@ -10,14 +10,6 @@ from open_root_file import read_event
 MAX_DETECTOR = 56
 MAX_ELEMENT = 200 
 
-# Grouping detectors
-DETECTOR_GROUPS = {
-    "Station": ["Station1", "Station2", "Station3 +", "Station3 -"],
-    "Hodoscope": ["Hodoscope1", "Hodoscope2", "Hodoscope3", "Hodoscope4", "Hodoscope5"],
-    "DP": ["DP-1", "DP-2"],
-    "Prop": ["Prop1", "Prop2", "Prop3"]
-}
-
 # Function for creating grouped heatmaps by detector type
 def create_individual_heatmaps(detector_ids, element_ids, station_map, selected_stations):
     # Create a DataFrame for the hits
