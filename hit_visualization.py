@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from open_root_file import read_event, get_total_spills
-from plot import create_grouped_heatmaps, display_heatmaps
+from plot import create_individual_heatmaps, display_heatmaps
 import sys
 import json
 
@@ -32,7 +32,7 @@ def load_and_display_spill(content_frame, event_number):
     selected_stations = [station for station, var in checkbox_vars.items() if var.get() == 1]
 
     # Generate new heatmaps for each selected station group
-    figures = create_grouped_heatmaps(d, e, station_map, selected_stations)
+    figures = create_individual_heatmaps(d, e, station_map, selected_stations)
 
     # Display the new heatmaps
     display_heatmaps(figures, content_frame)
@@ -90,7 +90,7 @@ def create_checkbox_with_color(frame, text, color, command):
 if __name__ == "__main__":
     # Initialize the main application window
     root = tk.Tk()
-    root.geometry("2560x1440")  # Set the window size for a larger display
+    root.geometry("1920x1080")  # Set the window size for a larger display
     root.title("Detector Hit Viewer")  # Set the window title
     root.configure(bg="#E9ECEF")  # Background color
 
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     # Create the right frame for checkboxes and align it next to the plot
     right_frame = tk.Frame(main_frame, bg="#F5F5F5", bd=1, relief="solid", padx=15, pady=15)
     right_frame.pack_propagate(False)
-    right_frame.config(width=300, height=750)
+    right_frame.config(width=190, height=750)
     right_frame.pack(side=tk.RIGHT, padx=20, pady=20, anchor="center")
 
     # Center wrapper frame to align both heatmaps and control buttons
