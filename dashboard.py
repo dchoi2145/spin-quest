@@ -2,7 +2,7 @@ import dash
 from dash import dcc, html
 import plotly.graph_objects as go
 import json
-from open_root_file import read_event, get_total_spills  # Import functions to read actual data
+from open_root_file import read_event, get_total_spills 
 from plot import create_individual_heatmaps
 
 # Load Bootstrap and initialize Dash app
@@ -13,9 +13,18 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 with open("detector_map.json", "r") as file:
     station_map = json.load(file)
 
-# Set initial event number
-initial_event_number = 1  # You can adjust this as needed
 file_path = r"D:\Documents\GitHub\spin-quest\run_data\run_005591\run_005591_spill_001903474_sraw.root"
+
+# Function to find the first event with data
+def find_first_event_with_data(starting_event=1):
+    for event_number in range(starting_event, get_total_spills(file_path)): 
+        detector_ids, element_ids = read_event(file_path, event_number)
+        if len(detector_ids) > 0 and len(element_ids) > 0:  # Check if data is non-empty
+            return event_number
+    return starting_event  # Default to starting_event if no data is found
+
+# Set initial event number to the first event with data
+initial_event_number = find_first_event_with_data()
 
 # Function to load data for a specific event and generate figures
 def generate_figures(event_number):
@@ -47,15 +56,23 @@ app.layout = html.Div([
         dcc.Input(id="event-number-input", type="number", value=initial_event_number, min=1, step=1)
     ], className="text-center my-4"),
 
-    html.Div(id="container", className="container")
+    html.Div(id="container", className="container"),
+
+    # Interval component for live updating
+    dcc.Interval(
+        id="interval-component",
+        interval=5*1000,  # Update every 5 seconds (adjust as needed)
+        n_intervals=0
+    )
 ])
 
-# Callback to update plots based on selected event number
+# Callback to update plots based on selected event number and interval
 @app.callback(
     dash.Output('container', 'children'),
-    [dash.Input('event-number-input', 'value')]
+    [dash.Input('event-number-input', 'value'),
+     dash.Input('interval-component', 'n_intervals')]  # Trigger on interval as well
 )
-def update_event_data(event_number):
+def update_event_data(event_number, n_intervals):
     if event_number is None:
         return dash.no_update
     
