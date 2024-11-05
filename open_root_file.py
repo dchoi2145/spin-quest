@@ -116,6 +116,15 @@ def get_total_elements(file_path, event_number):
             hits_element_ids.append(element)
     return len(hits_element_ids)
 
+def find_first_event_with_data(file_path, starting_event=1):
+    total_events = get_total_spills(file_path)
+    with uproot.open(file_path) as file:
+        for event_number in range(starting_event, total_events + 1):
+            has_data, _, _ = read_event(file, event_number, quick_check=True)
+            if has_data:
+                return event_number
+    return None  # Return None if no event with data is found
+
 if __name__ == "__main__":
     # store_data('Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root')
     #print(store_data)
