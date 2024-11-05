@@ -1,21 +1,24 @@
 import dash
-from dash import dcc, html, Input, Output
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import json
-from open_root_file import read_event, get_total_spills
 import pandas as pd
 import uproot
+
+from dash import dcc, html, Input, Output
+from plotly.subplots import make_subplots
+from open_root_file import read_event, get_total_spills
+
+# CONSTANTS
+DETECTOR_MAP_PATH = "detector_map.json"
+SPILL_PATH = "run_005591_spill_001903474_sraw.root"
 
 # Initialize the Dash app with Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 # Load station_map from JSON file
-with open("detector_map.json", "r") as file:
+with open(DETECTOR_MAP_PATH, "r") as file:
     station_map = json.load(file)
-
-file_path = r"D:\Documents\GitHub\spin-quest\run_data\run_005591\run_005591_spill_001903474_sraw.root"
 
 # Custom labels for each detector
 custom_labels = [
@@ -27,7 +30,7 @@ custom_labels = [
     'H4T', 'H4B', 'P2X1', 'P2X2', 'P2Y1', 'P2Y2'
 ]
 
-def find_first_event_with_data(starting_event=1):
+def find_first_event_with_data(file_path, starting_event=1):
     total_events = get_total_spills(file_path)
     with uproot.open(file_path) as file:
         for event_number in range(starting_event, total_events + 1):
@@ -35,9 +38,6 @@ def find_first_event_with_data(starting_event=1):
             if has_data:
                 return event_number
     return None  # Return None if no event with data is found
-
-# Set initial event number
-initial_event_number = find_first_event_with_data()
 
 # Function to create individual heatmaps for each detector
 def create_detector_heatmaps(detector_ids, element_ids, station_map):
@@ -120,14 +120,11 @@ def create_detector_heatmaps(detector_ids, element_ids, station_map):
     return fig
 
 # Function to load data for a specific event and generate the combined heatmap figure
-def generate_combined_heatmap_figure(event_number):
+def generate_combined_heatmap_figure(file_path, event_number):
     with uproot.open(file_path) as file:
         _, detector_ids, element_ids = read_event(file, event_number)
     heatmap_fig = create_detector_heatmaps(detector_ids, element_ids, station_map)
     return heatmap_fig
-
-# Generate figure for the initial event
-initial_heatmap = generate_combined_heatmap_figure(initial_event_number)
 
 # Navbar with "Menu" dropdown
 navbar = dbc.Navbar(
@@ -151,6 +148,13 @@ navbar = dbc.Navbar(
     dark=True,
     className="mb-4"
 )
+
+
+# Set initial event number
+initial_event_number = find_first_event_with_data(SPILL_PATH)
+
+# Generate figure for the initial event
+initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, initial_event_number)
 
 # Layout with event selection, plot display, and Navbar
 app.layout = html.Div([
