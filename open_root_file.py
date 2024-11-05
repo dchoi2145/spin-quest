@@ -4,7 +4,7 @@ import time
 import os
 
 # Function that checks if a file is still has data being written into it
-def is_file_still_writing(file_path, interval=2):
+def is_file_still_writing(file_path, interval=0.1):
     # Checks the size of the file when the function is ran
     initial_size = os.path.getsize(file_path)
 
@@ -22,11 +22,9 @@ def store_data(file_path):
     # Creates NumPy Array that will store the data we are looking for
     run_data = np.array([])
 
-    # Checks to see if the file size has changed in the last 2 seconds to make sure that the file is not being written into
-    if is_file_still_writing(file_path, 2):
+    # make sure the file is not being written into
+    while is_file_still_writing(file_path, 0.1):
         print("File is still being written to. Exiting the function.")
-        # If the file is currently being written into, exit the function
-        return
 
     # Open the Root file
     DY_tree = uproot.open(file_path)["save;1"]
@@ -117,9 +115,6 @@ def get_total_elements(file_path, event_number):
             # Since each element in 'elements_for_detector' is part of a hit, we log it as a hit
             hits_element_ids.append(element)
     return len(hits_element_ids)
-
-
-
 
 if __name__ == "__main__":
     # store_data('Jay/run_data/run_005591/run_005591_spill_001903474_sraw.root')
