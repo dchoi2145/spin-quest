@@ -40,55 +40,36 @@ def store_data(file_path):
     run_data = np.array([detID, elemID, drift])
 
 # Function that reads event data from a ROOT file
-def read_event(file_path, event_number):
-    # Open the ROOT file and access the relevant tree
-    file = uproot.open(file_path + ":save")
+def read_event(file, event_number, quick_check=False):
+    # Adjust event_number to zero-based indexing
+    entry_number = event_number - 1
 
-    # Get the array of detector IDs for the given event number
-    detector_id = file["fAllHits.detectorID"].array(library="np")[event_number]
+    # Access the relevant tree
+    tree = file["save"]  # Adjust 'save' to match your tree name if different
 
-    # Get the array of element IDs for the given event number
-    element_id = file["fAllHits.elementID"].array(library="np")[event_number]
+    # Define the branches to read
+    branches = ["fAllHits.detectorID", "fAllHits.elementID"]
 
-    # Initialize lists to store hits
-    hits_detector_ids = []
-    hits_element_ids = []
+    # Use uproot's arrays method to read only the desired entry
+    data = tree.arrays(branches, entry_start=entry_number, entry_stop=entry_number + 1, library="np")
 
-    # Iterate over unique detectors in the current event
-    for detector in np.unique(detector_id):
-        # Get the elements for this specific detector
-        elements_for_detector = element_id[detector_id == detector]
+    # Extract the arrays for this event
+    detector_id = data["fAllHits.detectorID"][0]
+    element_id = data["fAllHits.elementID"][0]
 
-        # Iterate over elements actually recorded for this detector
-        for element in elements_for_detector:
-            # Since each element in 'elements_for_detector' is part of a hit, we log it as a hit
-            hits_detector_ids.append(detector)
-            hits_element_ids.append(element)
-            print(f"Hit detected for detector ID {detector} at element {element}")
+    # Check if data is present for quick_check
+    if quick_check:
+        has_data = len(detector_id) > 0
+        return has_data, None, None
 
-    # Manually close the file
-    file.close()
-
-    # Convert lists to numpy arrays for returning
-    hits_detector_ids = np.array(hits_detector_ids)
-    hits_element_ids = np.array(hits_element_ids)
-
-    # Return both arrays: detected hits for detector IDs and element IDs
-    return hits_detector_ids, hits_element_ids
+    # Return the detector IDs and element IDs directly
+    return None, detector_id, element_id
 
 def get_total_spills(file_path):
-    # Open the ROOT file and access the relevant tree
-    file = uproot.open(file_path)
-    tree = file["save"]  # Replace "save" with the actual tree name if different
+    with uproot.open(file_path) as file:
+        tree = file["save"]  # Adjust 'save' to match your tree name if different
+        return tree.num_entries
 
-    # Get the number of entries in the tree
-    total_spills = tree.num_entries
-
-    # Close the file
-    file.close()
-
-    return total_spills
-import uproot
 
 # Function that reads event data from a ROOT file
 def get_total_detectors(file_path, event_number):
@@ -145,12 +126,12 @@ if __name__ == "__main__":
     #print(store_data)
     
     # Call the read_event function, passing the file path and event number
-    file_path = 'D:/Documents/GitHub/spin-quest/run_data/run_005591/run_005591_spill_001903474_sraw.root'
+    file_path = 'D:\Documents\GitHub\spin-quest\run_data\run_005591\run_005591_spill_001903474_sraw.root'
 
 
     event_number = 300
 
-    DY_tree = uproot.open('D:/Documents/GitHub/spin-quest/run_data/run_005591/run_005591_spill_001903474_sraw.root')["save;1"]
+    DY_tree = uproot.open('D:\Documents\GitHub\spin-quest\run_data\run_005591\run_005591_spill_001903474_sraw.root')["save;1"]
     print("Branches:", DY_tree.keys())
 
     # Read and print the event data
