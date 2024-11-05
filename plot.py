@@ -1,6 +1,5 @@
 import pandas as pd
 import plotly.graph_objects as go
-import uproot
 import json
 
 from plotly.subplots import make_subplots
@@ -104,7 +103,6 @@ def create_detector_heatmaps(detector_ids, element_ids, station_map):
 
 # Function to load data for a specific event and generate the combined heatmap figure
 def generate_combined_heatmap_figure(file_path, event_number):
-    with uproot.open(file_path) as file:
-        _, detector_ids, element_ids = read_event(file, event_number)
+    _, detector_ids, element_ids = read_event(file_path, event_number)
     heatmap_fig = create_detector_heatmaps(detector_ids, element_ids, station_map)
     return heatmap_fig
