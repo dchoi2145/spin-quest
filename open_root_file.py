@@ -38,22 +38,23 @@ def store_data(file_path):
     run_data = np.array([detID, elemID, drift])
 
 # Function that reads event data from a ROOT file
-def read_event(file, event_number, quick_check=False):
-    # Adjust event_number to zero-based indexing
-    entry_number = event_number - 1
+def read_event(file_path, event_number, quick_check=False):
+    with uproot.open(file_path) as file:
+        # Adjust event_number to zero-based indexing
+        entry_number = event_number - 1
 
-    # Access the relevant tree
-    tree = file["save"]  # Adjust 'save' to match your tree name if different
+        # Access the relevant tree
+        tree = file["save"]  # Adjust 'save' to match your tree name if different
 
-    # Define the branches to read
-    branches = ["fAllHits.detectorID", "fAllHits.elementID"]
+        # Define the branches to read
+        branches = ["fAllHits.detectorID", "fAllHits.elementID"]
 
-    # Use uproot's arrays method to read only the desired entry
-    data = tree.arrays(branches, entry_start=entry_number, entry_stop=entry_number + 1, library="np")
+        # Use uproot's arrays method to read only the desired entry
+        data = tree.arrays(branches, entry_start=entry_number, entry_stop=entry_number + 1, library="np")
 
-    # Extract the arrays for this event
-    detector_id = data["fAllHits.detectorID"][0]
-    element_id = data["fAllHits.elementID"][0]
+        # Extract the arrays for this event
+        detector_id = data["fAllHits.detectorID"][0]
+        element_id = data["fAllHits.elementID"][0]
 
     # Check if data is present for quick_check
     if quick_check:
@@ -118,11 +119,12 @@ def get_total_elements(file_path, event_number):
 
 def find_first_event_with_data(file_path, starting_event=1):
     total_events = get_total_spills(file_path)
-    with uproot.open(file_path) as file:
-        for event_number in range(starting_event, total_events + 1):
-            has_data, _, _ = read_event(file, event_number, quick_check=True)
-            if has_data:
-                return event_number
+
+    for event_number in range(starting_event, total_events + 1):
+        has_data, _, _ = read_event(file_path, event_number, quick_check=True)
+        if has_data:
+            return event_number  
+
     return None  # Return None if no event with data is found
 
 if __name__ == "__main__":
