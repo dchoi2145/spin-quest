@@ -132,16 +132,16 @@ if __name__ == "__main__":
     #print(store_data)
     
     # Call the read_event function, passing the file path and event number
-    file_path = 'D:\Documents\GitHub\spin-quest\run_data\run_005591\run_005591_spill_001903474_sraw.root'
+    file_path = "run_005591_spill_001903474_sraw.root"
 
 
-    event_number = 300
+    event_number = 301
 
-    DY_tree = uproot.open('D:\Documents\GitHub\spin-quest\run_data\run_005591\run_005591_spill_001903474_sraw.root')["save;1"]
+    DY_tree = uproot.open(file_path)["save;1"]
     print("Branches:", DY_tree.keys())
 
     # Read and print the event data
-    #detector_id, element_id = read_event(file_path, event_number)
-    #print(f"Processed Event Number {event_number}")
-    #print(f"Detector IDs: {detector_id}")
-    #print(f"Element IDs: {element_id}")
+    _, detector_id, element_id = read_event(file_path, event_number)
+    print(f"Processed Event Number {event_number}")
+    print(f"Detector IDs: {detector_id}")
+    print(f"Element IDs: {element_id}")

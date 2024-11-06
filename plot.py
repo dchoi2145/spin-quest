@@ -5,24 +5,35 @@ import json
 from plotly.subplots import make_subplots
 from open_root_file import read_event
 
-# Custom labels for each detector
-custom_labels = [
-    'D0V', 'D0Vp', 'D0Xp', 'D0X', 'D0U', 'D0Up', 'H1L', 'H1R', 'H1B', 'H1T',
-    'DP1TL', 'DP1TR', 'DP1BL', 'DP1BR', 'D2V', 'D2Vp', 'D2Xp', 'D2X', 'D2U', 'D2Up',
-    'H2R', 'H2L', 'H2T', 'H2B', 'DP2TL', 'DP2TR', 'DP2BL', 'DP2BR', 'D3pVp', 'D3pV',
-    'D3pXp', 'D3pX', 'D3pUp', 'D3pU', 'D3mVp', 'D3mV', 'D3mXp', 'D3mX', 'D3mUp', 'D3mU',
-    'H3T', 'H3B', 'P1Y1', 'P1Y2', 'H4Y1R', 'H4Y1L', 'P1X1', 'P1X2', 'H4Y2R', 'H4Y2L',
-    'H4T', 'H4B', 'P2X1', 'P2X2', 'P2Y1', 'P2Y2'
-]
-
 DETECTOR_MAP_PATH = "detector_map.json"
+SPECTROMETER_INFO_PATH = "spectrometer.csv"
 
-# Load station_map from JSON file
-with open(DETECTOR_MAP_PATH, "r") as file:
-    station_map = json.load(file)
+# Function for reading detector names from spectrometer CSV file
+def get_detector_info(file_name):
+    # two maps
+    id_to_name = dict()
+    name_to_elements = dict()
+
+    with open(file_name, 'r') as infile:
+        # skip first line
+        infile.readline()
+
+        for line in infile.readlines():
+            split_line = line.split(",")
+            detector_id = int(split_line[0])
+            detector_name = split_line[1]
+            num_elements = int(split_line[2])
+
+            id_to_name[detector_id] = detector_name
+            name_to_elements[detector_name] = num_elements
+
+    id_to_name[29] = "PLACEHOLDER"
+    name_to_elements["PLACEHOLDER"] = 200
+
+    return id_to_name, name_to_elements
 
 # Function to create individual heatmaps for each detector
-def create_detector_heatmaps(detector_ids, element_ids, station_map):
+def create_detector_heatmaps(detector_ids, element_ids, station_map, id_to_name, name_to_elements):
     # Convert data to a DataFrame for easier manipulation
     data = {'Detector': detector_ids, 'Element': element_ids, 'Hit': [1] * len(detector_ids)}
     df = pd.DataFrame(data)
@@ -61,7 +72,7 @@ def create_detector_heatmaps(detector_ids, element_ids, station_map):
         # Update x-axis to use custom labels
         fig.update_xaxes(
             tickvals=list(range(max_detector - min_detector + 1)),  # Position for each custom label
-            ticktext=custom_labels[min_detector:max_detector + 1],  # Custom labels slice
+            ticktext=[id_to_name[id] for id in range(min_detector, max_detector+1)],  # Custom labels slice
             tickangle=45,  # Rotate labels for readability
             showgrid=False,
             row=1,
@@ -104,5 +115,9 @@ def create_detector_heatmaps(detector_ids, element_ids, station_map):
 # Function to load data for a specific event and generate the combined heatmap figure
 def generate_combined_heatmap_figure(file_path, event_number):
     _, detector_ids, element_ids = read_event(file_path, event_number)
-    heatmap_fig = create_detector_heatmaps(detector_ids, element_ids, station_map)
+    detector_id_to_name, detector_name_to_num_elements = get_detector_info(SPECTROMETER_INFO_PATH)
+    with open(DETECTOR_MAP_PATH, "r") as file:
+        station_map = json.load(file)
+
+    heatmap_fig = create_detector_heatmaps(detector_ids, element_ids, station_map, detector_id_to_name, detector_name_to_num_elements)
     return heatmap_fig

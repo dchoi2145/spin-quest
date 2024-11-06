@@ -1,6 +1,5 @@
 import dash
 import dash_bootstrap_components as dbc
-import json
 
 from dash import dcc, html, Input, Output
 from open_root_file import find_first_event_with_data
