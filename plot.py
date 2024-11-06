@@ -5,6 +5,7 @@ from plotly.subplots import make_subplots
 from open_root_file import read_event
 
 SPECTROMETER_INFO_PATH = "spectrometer.csv"
+ROWS = 3
 
 # Function for reading detector names from spectrometer CSV file
 def get_detector_info(file_name):
@@ -40,11 +41,28 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
     unique_detectors = sorted(df['Detector'].unique())
     num_plots = len(unique_detectors)
     
+    # Ensure at least 1 column per row
+    cols_per_row = max(1, (num_plots + ROWS - 1) // ROWS)
+    
     # Create subplots
-    fig = make_subplots(rows=1, cols=num_plots, shared_yaxes=True, horizontal_spacing=0.02)
+    fig = make_subplots(
+        rows=ROWS, 
+        cols=cols_per_row, 
+        shared_yaxes=True, 
+        horizontal_spacing=0.02,
+        vertical_spacing=0.1
+    )
+    
+    # If no detectors, return empty figure
+    if num_plots == 0:
+        return fig
     
     # Create heatmap for each unique detector
-    for i, detector_id in enumerate(unique_detectors, start=1):
+    for idx, detector_id in enumerate(unique_detectors):
+        # Calculate current row and column
+        current_row = (idx // cols_per_row) + 1
+        current_col = (idx % cols_per_row) + 1
+        
         detector_data = df[df['Detector'] == detector_id]
         
         # Create hit matrix
@@ -61,48 +79,55 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
                 xgap=1,
                 ygap=1
             ),
-            row=1, col=i
+            row=current_row, 
+            col=current_col
         )
 
-        # Update x-axis to use custom labels
+        # Update x-axis labels
         fig.update_xaxes(
-            tickvals=list(range(1)),  # Position for each custom label
-            ticktext=[id_to_name[id] for id in range(detector_id, detector_id+1)],  # Custom labels slice
-            tickangle=45,  # Rotate labels for readability
+            tickvals=list(range(1)),
+            ticktext=[id_to_name[id] for id in range(detector_id, detector_id+1)],
+            tickangle=45,
             showgrid=False,
-            row=1,
-            col=i
+            row=current_row,
+            col=current_col
         )
 
-        # Add annotation for each station label, precisely centered above each subplot
+        # Add detector label annotation
         fig.add_annotation(
             x=0.5,
             y=1.05,
-            xref="x domain",
-            yref="y domain",
+            xref="x domain" if idx == 0 else f"x{idx+1} domain",
+            yref="y domain" if idx == 0 else f"y{idx+1} domain",
             text=id_to_name[detector_id],
             showarrow=False,
             font=dict(size=12, color="black"),
-            align="center",
-            row=1,
-            col=i
+            align="center"
         )
 
-    # Only add y-axis labels and title for the first plot in the row
-    fig.update_yaxes(title_text="Element ID", range=[0, 200], showticklabels=True, gridcolor="lightgray", row=1, col=1)
-    for col in range(2, num_plots + 1):  # Hide y-axis labels for all other plots
-        fig.update_yaxes(showticklabels=False, title_text=None, row=1, col=col)
+    # Update y-axis labels
+    for row in range(1, ROWS + 1):
+        # Add y-axis label for first column of each row
+        fig.update_yaxes(
+            title_text="Element ID" if row == 1 else None,
+            range=[0, 200],
+            showticklabels=True,
+            gridcolor="lightgray",
+            row=row,
+            col=1
+        )
 
-    # Update layout for overall plot
+    # Update layout
     fig.update_layout(
         title=dict(
             text="Detector Hit Heatmap by Detector",
-            y=0.95,  # Move the main title slightly up to create more space
+            y=0.95,
             font=dict(size=16)
         ),
-        height=700,  # Increase plot height to allow for the extra space
+        height=1000,
         margin=dict(t=100, b=40, l=40, r=20),
         plot_bgcolor="white",
+        showlegend=False
     )
 
     return fig

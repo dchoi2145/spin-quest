@@ -1,7 +1,7 @@
 import dash
 import dash_bootstrap_components as dbc
 
-from dash import dcc, html, Input, Output
+from dash import dcc, html, Input, Output, State
 from open_root_file import find_first_event_with_data
 from plot import generate_combined_heatmap_figure
 
@@ -41,15 +41,28 @@ initial_event_number = find_first_event_with_data(SPILL_PATH)
 # Generate figure for the initial event
 initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, initial_event_number)
 
-# Layout with event selection, plot display, and Navbar
+# Layout with event selection, update button, and plot display
 app.layout = html.Div([
     navbar,
     
     html.H1("Interactive Detector Hit Viewer", className="text-center my-4"),
     
     html.Div([
-        html.Label("Select Event Number:", className="text-center font-weight-bold"),
-        dcc.Input(id="event-number-input", type="number", value=initial_event_number, min=1, step=1)
+        html.Label("Select Event Number:", className="text-center font-weight-bold me-3"),
+        dcc.Input(
+            id="event-number-input", 
+            type="number", 
+            value=initial_event_number, 
+            min=1, 
+            step=1,
+            className="me-3"
+        ),
+        dbc.Button(
+            "Update Plot", 
+            id="update-button", 
+            color="primary", 
+            n_clicks=0
+        )
     ], className="text-center my-4"),
 
     html.Div(id="container", className="container-fluid", children=[
@@ -58,27 +71,23 @@ app.layout = html.Div([
             id="heatmap-graph", 
             style={"width": "100%"},
             config={
-                "displayModeBar": True,      # Keep mode bar for zoom/pan features
-                "displaylogo": False         # Disable the Plotly logo (blue button)
+                "displayModeBar": True,
+                "displaylogo": False
             }
         )
-    ]),
-
-    # Interval component for live updating
-    dcc.Interval(
-        id="interval-component",
-        interval=5*1000,  # Update every 5 seconds (adjust as needed)
-        n_intervals=0
-    )
+    ])
 ])
 
-# Callback to update the heatmap based on selected event number and interval
+# Callback to update the heatmap only when the button is clicked
 @app.callback(
     Output('heatmap-graph', 'figure'),
-    [Input('event-number-input', 'value'),
-     Input('interval-component', 'n_intervals')]  # Trigger on interval as well
+    Input('update-button', 'n_clicks'),
+    State('event-number-input', 'value')
 )
-def update_heatmap(event_number, n_intervals):
+def update_heatmap(n_clicks, event_number):
+    if n_clicks is None:
+        return dash.no_update
+    
     if event_number is None:
         return dash.no_update
     
