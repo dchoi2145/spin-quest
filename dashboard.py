@@ -1,39 +1,45 @@
 import dash
 import dash_bootstrap_components as dbc
-
 from dash import dcc, html, Input, Output, State
 from open_root_file import find_first_event_with_data
 from plot import generate_combined_heatmap_figure
 
 # CONSTANTS
-SPILL_PATH = "run_005591_spill_001903474_sraw.root"
+SPILL_PATH = r"D:\Documents\GitHub\spin-quest\run_data\run_005591\run_005591_spill_001903474_sraw.root"
 
-# Initialize the Dash app with Bootstrap theme
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+# Initialize the Dash app with Bootstrap theme and suppress callback exceptions
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
 
 # Navbar with "Menu" dropdown
 navbar = dbc.Navbar(
-    dbc.Container([
-        dbc.NavbarBrand("Menu", className="me-auto"),
-        dbc.DropdownMenu(
-            label="Menu",
-            children=[
-                dbc.DropdownMenuItem("Stations", href="#"),
-                dbc.DropdownMenuItem("Hodoscopes", href="#"),
-                dbc.DropdownMenuItem("Prop Detectors", href="#"),
-                dbc.DropdownMenuItem("DP Detectors", href="#"),
-            ],
-            nav=True,
-            in_navbar=True,
-            toggle_style={"cursor": "pointer"},
-            direction="down"  # Ensure dropdown opens downwards
-        ),
-    ]),
+    dbc.Container(
+        [
+            dbc.Nav(
+                [
+                    dbc.DropdownMenu(
+                        label="Menu",
+                        children=[
+                            dbc.DropdownMenuItem("All Stations", href="/stations"),
+                            dbc.DropdownMenuItem("Hodoscopes", href="/hodoscopes"),
+                            dbc.DropdownMenuItem("Prop Detectors", href="/prop-detectors"),
+                            dbc.DropdownMenuItem("DP Detectors", href="/dp-detectors"),
+                        ],
+                        nav=True,
+                        in_navbar=True,
+                        toggle_style={"cursor": "pointer"},
+                        direction="down"
+                    )
+                ],
+                navbar=True,
+                className="ms-3"
+            ),
+        ],
+        fluid=True
+    ),
     color="dark",
     dark=True,
     className="mb-4"
 )
-
 
 # Set initial event number
 initial_event_number = find_first_event_with_data(SPILL_PATH)
@@ -41,42 +47,56 @@ initial_event_number = find_first_event_with_data(SPILL_PATH)
 # Generate figure for the initial event
 initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, initial_event_number)
 
-# Layout with event selection, update button, and plot display
-app.layout = html.Div([
-    navbar,
-    
-    html.H1("Interactive Detector Hit Viewer", className="text-center my-4"),
-    
-    html.Div([
-        html.Label("Select Event Number:", className="text-center font-weight-bold me-3"),
-        dcc.Input(
-            id="event-number-input", 
-            type="number", 
-            value=initial_event_number, 
-            min=1, 
-            step=1,
-            className="me-3"
-        ),
-        dbc.Button(
-            "Update Plot", 
-            id="update-button", 
-            color="primary", 
-            n_clicks=0
-        )
-    ], className="text-center my-4"),
-
-    html.Div(id="container", className="container-fluid", children=[
+# Layout for each page
+def create_page_layout(title, heatmap_fig):
+    return html.Div([
+        html.H1(title, className="text-center my-4"),
+        html.Div([
+            html.Label("Select Event Number:", className="text-center font-weight-bold me-3"),
+            dcc.Input(
+                id="event-number-input",
+                type="number",
+                value=initial_event_number,
+                min=1,
+                step=1,
+                className="me-3"
+            ),
+            dbc.Button(
+                "Update Plot",
+                id="update-button",
+                color="primary",
+                n_clicks=0
+            )
+        ], className="text-center my-4"),
         dcc.Graph(
-            figure=initial_heatmap, 
-            id="heatmap-graph", 
+            figure=heatmap_fig,
+            id="heatmap-graph",
             style={"width": "100%"},
-            config={
-                "displayModeBar": True,
-                "displaylogo": False
-            }
+            config={"displayModeBar": True, "displaylogo": False}
         )
     ])
+
+# App layout with default content to prevent errors
+app.layout = html.Div([
+    dcc.Location(id="url", refresh=False),
+    navbar,
+    # Default content to ensure components are loaded
+    html.Div(id="page-content", children=create_page_layout("All Stations", initial_heatmap))
 ])
+
+# Callback to update the content based on the URL
+@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
+def display_page(pathname):
+    if pathname == "/stations":
+        return create_page_layout("All Stations", initial_heatmap)
+    elif pathname == "/hodoscopes":
+        return create_page_layout("Hodoscopes", initial_heatmap)
+    elif pathname == "/prop-detectors":
+        return create_page_layout("Prop Detectors", initial_heatmap)
+    elif pathname == "/dp-detectors":
+        return create_page_layout("DP Detectors", initial_heatmap)
+    else:
+        return create_page_layout("All Stations", initial_heatmap)  # Default page
 
 # Callback to update the heatmap only when the button is clicked
 @app.callback(
@@ -85,14 +105,11 @@ app.layout = html.Div([
     State('event-number-input', 'value')
 )
 def update_heatmap(n_clicks, event_number):
-    if n_clicks is None:
+    if n_clicks is None or event_number is None:
         return dash.no_update
-    
-    if event_number is None:
-        return dash.no_update
-    
+
     heatmap_fig = generate_combined_heatmap_figure(SPILL_PATH, event_number)
     return heatmap_fig
 
 if __name__ == "__main__":
-    app.run_server(debug=False)
+    app.run_server(debug=True)
