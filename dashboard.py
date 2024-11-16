@@ -5,7 +5,7 @@ from open_root_file import find_first_event_with_data
 from plot import generate_combined_heatmap_figure
 
 # CONSTANTS
-SPILL_PATH = r"D:\Documents\GitHub\spin-quest\run_data\run_005591\run_005591_spill_001903474_sraw.root"
+SPILL_PATH = "/Users/davidchoi/Documents/GitHub/spin-quest/run_005591_spill_001903474_sraw.root"
 
 # Initialize the Dash app with Bootstrap theme and suppress callback exceptions
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
@@ -73,6 +73,11 @@ def create_page_layout(title, heatmap_fig):
             id="heatmap-graph",
             style={"width": "100%"},
             config={"displayModeBar": True, "displaylogo": False}
+        ),
+        dcc.Interval(
+            id="interval-component",
+            interval=5000,  # Update every 5 seconds
+            n_intervals=0
         )
     ])
 
@@ -80,7 +85,6 @@ def create_page_layout(title, heatmap_fig):
 app.layout = html.Div([
     dcc.Location(id="url", refresh=False),
     navbar,
-    # Default content to ensure components are loaded
     html.Div(id="page-content", children=create_page_layout("All Stations", initial_heatmap))
 ])
 
@@ -98,18 +102,19 @@ def display_page(pathname):
     else:
         return create_page_layout("All Stations", initial_heatmap)  # Default page
 
-# Callback to update the heatmap only when the button is clicked
+# Callback to update the heatmap based on both button click and interval
 @app.callback(
     Output('heatmap-graph', 'figure'),
-    Input('update-button', 'n_clicks'),
+    [Input('update-button', 'n_clicks'), Input('interval-component', 'n_intervals')],
     State('event-number-input', 'value')
 )
-def update_heatmap(n_clicks, event_number):
-    if n_clicks is None or event_number is None:
+def update_heatmap(n_clicks, n_intervals, event_number):
+    if event_number is None:
         return dash.no_update
 
+    # Generate a new heatmap figure with the current event number
     heatmap_fig = generate_combined_heatmap_figure(SPILL_PATH, event_number)
     return heatmap_fig
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False)
