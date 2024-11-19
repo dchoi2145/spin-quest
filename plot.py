@@ -5,7 +5,6 @@ from plotly.subplots import make_subplots
 from open_root_file import read_event
 
 SPECTROMETER_INFO_PATH = "spectrometer.csv"
-ROWS = 3
 
 # Function for reading detector names from spectrometer CSV file
 def get_detector_info(file_name):
@@ -33,50 +32,45 @@ def get_detector_info(file_name):
 
 # Function to create individual heatmaps for each detector
 def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elements):
-    # Convert data to a DataFrame for easier manipulation
+    # Convert data to a DataFrame
     data = {'Detector': detector_ids, 'Element': element_ids, 'Hit': [1] * len(detector_ids)}
     df = pd.DataFrame(data)
 
-    # Get unique detector IDs and calculate number of plots
+    # Get unique detector IDs
     unique_detectors = sorted(df['Detector'].unique())
     num_plots = len(unique_detectors)
     
-    cols_per_row = max(1, (num_plots + ROWS - 1) // ROWS)
-    
+    # Create a single row of subplots
     fig = make_subplots(
-        rows=ROWS, 
-        cols=cols_per_row, 
-        shared_yaxes=True, 
-        horizontal_spacing=0.02,
-        vertical_spacing=0.1
+        rows=1,  # one row 
+        cols=num_plots,  
+        shared_yaxes=True,
+        horizontal_spacing=0, # no spacing between plots 
+        vertical_spacing=0    
     )
     
     if num_plots == 0:
         return fig
     
     for idx, detector_id in enumerate(unique_detectors):
-        current_row = (idx // cols_per_row) + 1
-        current_col = (idx % cols_per_row) + 1
+        current_col = idx + 1  # Column index (1-based)
         
         detector_data = df[df['Detector'] == detector_id]
         detector_name = id_to_name[detector_id]
         num_elements = name_to_elements[detector_name]
         
         # Create hit matrix
-        z_matrix = [[0] * 3 for _ in range(200)]  # Fixed height of 200
-        
-        # Calculate block height for this detector
+        z_matrix = [[0] * 3 for _ in range(200)]
         block_height = int(200 / num_elements)
         
-        # Fill hits with proper block heights
+        # Fill hits
         for _, row in detector_data.iterrows():
             element_idx = int(row['Element'])
             if 0 <= element_idx < num_elements:
-                # Fill the entire block height for this element
                 start_idx = element_idx * block_height
                 end_idx = start_idx + block_height
                 for i in range(start_idx, end_idx):
-                    if i < 200:  # Ensure we don't exceed matrix bounds
+                    if i < 200:
                         z_matrix[i] = [1] * 3
         
         fig.add_trace(
@@ -84,35 +78,34 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
                 z=z_matrix,
                 colorscale=[[0, 'blue'], [1, 'orange']],
                 showscale=False,
-                xgap=1,  # Add small gap between columns
-                ygap=1,  # Add small gap between rows
+                xgap=0,  
+                ygap=0,  
                 hoverongaps=False
             ),
-            row=current_row, 
+            row=1, 
             col=current_col
         )
 
-        # Update x-axis for detector names
+        # Update x-axis labels
         fig.update_xaxes(
             title_text=f"{detector_name}<br>({num_elements})",
             title_standoff=25,
             showgrid=False,
             showticklabels=False,
-            row=current_row,
+            row=1,
             col=current_col
         )
 
-    # Update y-axes
-    for row in range(1, ROWS + 1):
-        fig.update_yaxes(
-            title_text="Element ID" if row == 1 else None,
-            range=[0, 200],  # This makes elements increase from bottom to top
-            showticklabels=True,
-            gridcolor="lightgray",
-            dtick=20,
-            row=row,
-            col=1
-        )
+    # Update only first plot y-axis
+    fig.update_yaxes(
+        title_text="Element ID",
+        range=[0, 200],
+        showticklabels=True,
+        gridcolor="lightgray",
+        dtick=20,
+        row=1,
+        col=1
+    )
 
     # Update layout
     fig.update_layout(
@@ -121,7 +114,7 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
             y=0.98,
             font=dict(size=16)
         ),
-        height=2000,
+        height=800,
         margin=dict(t=100, b=40, l=40, r=20),
         plot_bgcolor="white",
         showlegend=False

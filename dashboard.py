@@ -5,7 +5,7 @@ from open_root_file import find_first_event_with_data
 from plot import generate_combined_heatmap_figure
 
 # CONSTANTS
-SPILL_PATH = "/Users/davidchoi/Documents/GitHub/spin-quest/run_005591_spill_001903474_sraw.root"
+SPILL_PATH = "run_005591_spill_001903474_sraw.root"
 
 # Initialize the Dash app with Bootstrap theme and suppress callback exceptions
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
