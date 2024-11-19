@@ -60,7 +60,7 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
         num_elements = name_to_elements[detector_name]
         
         # Create hit matrix
-        z_matrix = [[0] * 3 for _ in range(200)]
+        z_matrix = [[0] for _ in range(200)]
         block_height = int(200 / num_elements)
         
         # Fill hits
@@ -71,7 +71,7 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
                 end_idx = start_idx + block_height
                 for i in range(start_idx, end_idx):
                     if i < 200:
-                        z_matrix[i] = [1] * 3
+                        z_matrix[i] = [1]
         
         fig.add_trace(
             go.Heatmap(
@@ -86,16 +86,21 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
             col=current_col
         )
 
-        # Update x-axis labels
+        # Add vertical detector names
         fig.update_xaxes(
-            title_text=f"{detector_name}<br>({num_elements})",
-            title_standoff=25,
+            title='',  
             showgrid=False,
-            showticklabels=False,
+            zeroline=False,
+            showline=False,
+            showticklabels=True,  
+            tickmode='array', 
+            tickvals=[0], 
+            ticktext=[f"{detector_name} ({num_elements})"],  
+            tickangle=270,  
             row=1,
             col=current_col
         )
-
+        
     # Update only first plot y-axis
     fig.update_yaxes(
         title_text="Element ID",
