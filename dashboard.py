@@ -74,11 +74,11 @@ def create_page_layout(title, heatmap_fig):
             style={"width": "100%"},
             config={"displayModeBar": True, "displaylogo": False}
         ),
-        dcc.Interval(
-            id="interval-component",
-            interval=5000,  # Update every 5 seconds
-            n_intervals=0
-        )
+        #dcc.Interval(
+        #    id="interval-component",
+        #    interval=5000,  # Update every 5 seconds
+        #    n_intervals=0
+        #)
     ])
 
 # App layout with default content to prevent errors
@@ -102,19 +102,30 @@ def display_page(pathname):
     else:
         return create_page_layout("All Stations", initial_heatmap)  # Default page
 
-# Callback to update the heatmap based on both button click and interval
+# Callback to update the heatmap based on button click 
 @app.callback(
     Output('heatmap-graph', 'figure'),
-    [Input('update-button', 'n_clicks'), Input('interval-component', 'n_intervals')],
-    State('event-number-input', 'value')
+    Input('update-button', 'n_clicks'),
+    State('event-number-input', 'value'),
+    prevent_initial_call=True 
 )
-def update_heatmap(n_clicks, n_intervals, event_number):
-    if event_number is None:
-        return dash.no_update
+def update_heatmap(n_clicks, event_number):
+    if n_clicks is None:  # Don't update on initial load
+        raise dash.no_update
+        
+    # Generate new heatmap figure
+    return generate_combined_heatmap_figure(SPILL_PATH, event_number)
 
-    # Generate a new heatmap figure with the current event number
-    heatmap_fig = generate_combined_heatmap_figure(SPILL_PATH, event_number)
-    return heatmap_fig
+# callback for interval
+#@app.callback(
+#    Output('heatmap-graph', 'figure'),
+#    Input('interval-component', 'n_intervals'),
+#    State('event-number-input', 'value'),
+#    prevent_initial_call=True
+#)
+#def update_heatmap_interval(n_intervals, event_number):
+#    return generate_combined_heatmap_figure(SPILL_PATH, event_number)
 
 if __name__ == "__main__":
     app.run_server(debug=False)
+    
