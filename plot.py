@@ -4,7 +4,15 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from open_root_file import read_event
 
+# CONSTANTS
 SPECTROMETER_INFO_PATH = "spectrometer.csv"
+Z_ORDER = [5, 6, 4, 3, 1, 2, 33, 34, 31, 32, 7, 
+           8, 9, 10, 11, 12, 55, 56, 57, 58, 13, 
+           14, 15, 16, 17, 18, 35, 36, 37, 38, 59, 
+           60, 61, 62, 25, 26, 27, 28, 19, 30, 20, 
+           21, 22, 23, 24, 39, 40, 47, 48, 42, 41, 
+           49, 50, 43, 44, 45, 46, 51, 52, 53, 54,
+           29] # placeholder?
 
 # Function for reading detector names from spectrometer CSV file
 def get_detector_info(file_name):
@@ -35,24 +43,17 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
     # Convert data to a DataFrame
     data = {'Detector': detector_ids, 'Element': element_ids, 'Hit': [1] * len(detector_ids)}
     df = pd.DataFrame(data)
-
-    # Get unique detector IDs
-    unique_detectors = sorted(df['Detector'].unique())
-    num_plots = len(unique_detectors)
     
     # Create a single row of subplots
     fig = make_subplots(
         rows=1,  # one row 
-        cols=num_plots,  
+        cols=len(Z_ORDER),  
         shared_yaxes=True,
         horizontal_spacing=0, # no spacing between plots 
         vertical_spacing=0    
     )
     
-    if num_plots == 0:
-        return fig
-    
-    for idx, detector_id in enumerate(unique_detectors):
+    for idx, detector_id in enumerate(Z_ORDER):
         current_col = idx + 1  # Column index (1-based)
         
         detector_data = df[df['Detector'] == detector_id]
