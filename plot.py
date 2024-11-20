@@ -13,6 +13,7 @@ Z_ORDER = [5, 6, 4, 3, 1, 2, 33, 34, 31, 32, 7,
            21, 22, 23, 24, 39, 40, 47, 48, 42, 41, 
            49, 50, 43, 44, 45, 46, 51, 52, 53, 54,
            29] # placeholder?
+MAX_ELEMENT_ID = 400
 
 # Function for reading detector names from spectrometer CSV file
 def get_detector_info(file_name):
@@ -61,8 +62,9 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
         num_elements = name_to_elements[detector_name]
         
         # Create hit matrix
-        z_matrix = [[0] for _ in range(200)]
-        block_height = int(200 / num_elements)
+        z_matrix = [[0] for _ in range(MAX_ELEMENT_ID)]
+        block_height = int(MAX_ELEMENT_ID / num_elements)
+        hover_text = [[f"Element ID: {i//block_height}, -"] for i in range(MAX_ELEMENT_ID)]
         
         # Fill hits
         for _, row in detector_data.iterrows():
@@ -71,12 +73,16 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
                 start_idx = element_idx * block_height
                 end_idx = start_idx + block_height
                 for i in range(start_idx, end_idx):
-                    if i < 200:
+                    if i < MAX_ELEMENT_ID:
                         z_matrix[i] = [1]
+                        hover_text[i] = [f"Element ID: {element_idx}, Hit"]
         
         fig.add_trace(
             go.Heatmap(
                 z=z_matrix,
+                hovertemplate=f"Detector: {detector_name}<br>" +
+                             "Element ID: %{y}<br>" +
+                             "Status: %{z:d}<extra></extra>",
                 colorscale=[[0, 'blue'], [1, 'orange']],
                 showscale=False,
                 xgap=0,  
@@ -105,7 +111,7 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
     # Update only first plot y-axis
     fig.update_yaxes(
         title_text="Element ID",
-        range=[0, 200],
+        range=[0, MAX_ELEMENT_ID],
         showticklabels=True,
         gridcolor="lightgray",
         dtick=20,
