@@ -5,7 +5,6 @@ from plotly.subplots import make_subplots
 from open_root_file import read_event
 
 # CONSTANTS
-SPECTROMETER_INFO_PATH = "spectrometer.csv"
 Z_ORDER = [5, 6, 4, 3, 1, 2, 33, 34, 31, 32, 7, 
            8, 9, 10, 11, 12, 55, 56, 57, 58, 13, 
            14, 15, 16, 17, 18, 35, 36, 37, 38, 59, 
@@ -135,9 +134,8 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
     return fig
 
 # Function to load data for a specific event and generate the combined heatmap figure
-def generate_combined_heatmap_figure(file_path, event_number):
+def generate_combined_heatmap_figure(file_path, event_number, detector_id_to_name, detector_name_to_num_elements):
     _, detector_ids, element_ids = read_event(file_path, event_number)
-    detector_id_to_name, detector_name_to_num_elements = get_detector_info(SPECTROMETER_INFO_PATH)
 
     heatmap_fig = create_detector_heatmaps(detector_ids, element_ids, detector_id_to_name, detector_name_to_num_elements)
     return heatmap_fig

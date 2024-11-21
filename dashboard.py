@@ -2,10 +2,11 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State
 from open_root_file import find_first_event_with_data
-from plot import generate_combined_heatmap_figure
+from plot import generate_combined_heatmap_figure, get_detector_info
 
 # CONSTANTS
 SPILL_PATH = "run_005591_spill_001903474_sraw.root"
+SPECTROMETER_INFO_PATH = "spectrometer.csv"
 
 # Initialize the Dash app with Bootstrap theme and suppress callback exceptions
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
@@ -44,8 +45,12 @@ navbar = dbc.Navbar(
 # Set initial event number
 initial_event_number = find_first_event_with_data(SPILL_PATH)
 
+# Get detector names
+detector_id_to_name, detector_name_to_num_elements = get_detector_info(SPECTROMETER_INFO_PATH)
+detector_names = [key for key in detector_name_to_num_elements]
+
 # Generate figure for the initial event
-initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, initial_event_number)
+initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, initial_event_number, detector_id_to_name, detector_name_to_num_elements)
 
 # Layout for each page
 def create_page_layout(title, heatmap_fig):
@@ -66,7 +71,14 @@ def create_page_layout(title, heatmap_fig):
                 id="update-button",
                 color="primary",
                 n_clicks=0
-            )
+            ),
+            dcc.Checklist(
+                id="checklist",
+                options=detector_names,
+                value=detector_names[0],
+                inline=True
+            ),
+            html.Label(["Hi"], id="label", className="text-center font-weight-bold me-3"),
         ], className="text-center my-4"),
         dcc.Graph(
             figure=heatmap_fig,
@@ -114,7 +126,14 @@ def update_heatmap(n_clicks, event_number):
         raise dash.no_update
         
     # Generate new heatmap figure
-    return generate_combined_heatmap_figure(SPILL_PATH, event_number)
+    return generate_combined_heatmap_figure(SPILL_PATH, event_number, detector_id_to_name, detector_name_to_num_elements)
+
+@app.callback(
+    Output(component_id='label', component_property='children'),
+    Input(component_id='checklist', component_property='value')
+)
+def update_output_div(input_value):
+    return f'Output: {input_value}'
 
 # callback for interval
 #@app.callback(
