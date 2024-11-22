@@ -46,46 +46,63 @@ navbar = dbc.Navbar(
 initial_event_number = find_first_event_with_data(SPILL_PATH)
 
 # Get detector names
-detector_id_to_name, detector_name_to_num_elements = get_detector_info(SPECTROMETER_INFO_PATH)
-detector_names = [key for key in detector_name_to_num_elements]
+detector_name_to_id_elements = get_detector_info(SPECTROMETER_INFO_PATH)
+detector_names = [key for key in detector_name_to_id_elements]
 
 # Generate figure for the initial event
-initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, initial_event_number, detector_id_to_name, detector_name_to_num_elements)
+initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, initial_event_number, detector_name_to_id_elements)
 
 # Layout for each page
 def create_page_layout(title, heatmap_fig):
     return html.Div([
         html.H1(title, className="text-center my-4"),
-        html.Div([
-            html.Label("Select Event Number:", className="text-center font-weight-bold me-3"),
-            dcc.Input(
-                id="event-number-input",
-                type="number",
-                value=initial_event_number,
-                min=1,
-                step=1,
-                className="me-3"
-            ),
-            dbc.Button(
-                "Update Plot",
-                id="update-button",
-                color="primary",
-                n_clicks=0
-            ),
-            dcc.Checklist(
-                id="checklist",
-                options=detector_names,
-                value=detector_names[0],
-                inline=True
-            ),
-            html.Label(["Hi"], id="label", className="text-center font-weight-bold me-3"),
-        ], className="text-center my-4"),
-        dcc.Graph(
-            figure=heatmap_fig,
-            id="heatmap-graph",
-            style={"width": "100%"},
-            config={"displayModeBar": True, "displaylogo": False}
-        ),
+        dbc.Container([
+            dbc.Row([
+                dbc.Col([
+                    html.Label("Select Event Number:", className="me-2"),
+                    dcc.Input(
+                        id="event-number-input",
+                        type="number",
+                        value=initial_event_number,
+                        min=1,
+                        step=1,
+                        className="me-2"
+                    ),
+                    dbc.Button(
+                        "Update Plot",
+                        id="update-button",
+                        color="primary",
+                        n_clicks=0
+                    ),
+                ], width=12, className="text-center mb-3")
+            ]),
+            dbc.Row([
+                dbc.Col([
+                    dcc.Graph(
+                        figure=heatmap_fig,
+                        id="heatmap-graph",
+                        style={"width": "100%"},
+                        config={"displayModeBar": True, "displaylogo": False}
+                    )
+                ])
+            ]),
+            dbc.Row([
+                dbc.Col([
+                    html.Label("Select Detectors to Display:", className="mb-2"),
+                    dbc.Card([
+                        dbc.CardBody([
+                            dcc.Checklist(
+                                id="detector-checklist",
+                                options=[{'label': name, 'value': name} for name in detector_names],
+                                value=detector_names,
+                                inline=True,
+                                className="detector-checklist"
+                            )
+                        ])
+                    ])
+                ], width=12, className="mb-3")
+            ])
+        ])
         #dcc.Interval(
         #    id="interval-component",
         #    interval=5000,  # Update every 5 seconds
@@ -93,7 +110,7 @@ def create_page_layout(title, heatmap_fig):
         #)
     ])
 
-# App layout with default content to prevent errors
+# App layout 
 app.layout = html.Div([
     dcc.Location(id="url", refresh=False),
     navbar,
@@ -117,23 +134,24 @@ def display_page(pathname):
 # Callback to update the heatmap based on button click 
 @app.callback(
     Output('heatmap-graph', 'figure'),
-    Input('update-button', 'n_clicks'),
-    State('event-number-input', 'value'),
-    prevent_initial_call=True 
+    [Input('update-button', 'n_clicks'),
+     Input('detector-checklist', 'value')],
+    [State('event-number-input', 'value')],
+    prevent_initial_call=True
 )
-def update_heatmap(n_clicks, event_number):
-    if n_clicks is None:  # Don't update on initial load
-        raise dash.no_update
-        
-    # Generate new heatmap figure
-    return generate_combined_heatmap_figure(SPILL_PATH, event_number, detector_id_to_name, detector_name_to_num_elements)
-
-@app.callback(
-    Output(component_id='label', component_property='children'),
-    Input(component_id='checklist', component_property='value')
-)
-def update_output_div(input_value):
-    return f'Output: {input_value}'
+def update_heatmap(n_clicks, selected_detectors, event_number):
+    # Filter detector information based on selected detectors
+    filtered_detector_name_to_id_elements = {
+        name: detector_name_to_id_elements[name]
+        for name in selected_detectors
+    }
+    
+    # Generate new heatmap figure with only selected detectors
+    return generate_combined_heatmap_figure(
+        SPILL_PATH, 
+        event_number,
+        filtered_detector_name_to_id_elements
+    )
 
 # callback for interval
 #@app.callback(

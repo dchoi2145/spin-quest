@@ -5,20 +5,12 @@ from plotly.subplots import make_subplots
 from open_root_file import read_event
 
 # CONSTANTS
-Z_ORDER = [5, 6, 4, 3, 1, 2, 33, 34, 31, 32, 7, 
-           8, 9, 10, 11, 12, 55, 56, 57, 58, 13, 
-           14, 15, 16, 17, 18, 35, 36, 37, 38, 59, 
-           60, 61, 62, 25, 26, 27, 28, 19, 30, 20, 
-           21, 22, 23, 24, 39, 40, 47, 48, 42, 41, 
-           49, 50, 43, 44, 45, 46, 51, 52, 53, 54,
-           29] # placeholder?
 MAX_ELEMENT_ID = 400
 
 # Function for reading detector names from spectrometer CSV file
 def get_detector_info(file_name):
-    # two maps
-    id_to_name = dict()
-    name_to_elements = dict()
+    name_to_id_elements = dict()
+    ids = set()
 
     with open(file_name, 'r') as infile:
         # skip first line
@@ -30,16 +22,16 @@ def get_detector_info(file_name):
             detector_name = split_line[1]
             num_elements = int(split_line[2])
 
-            id_to_name[detector_id] = detector_name
-            name_to_elements[detector_name] = num_elements
+            if detector_id not in ids:
+                name_to_id_elements[detector_name] = (detector_id, num_elements)
+                ids.add(detector_id)
 
-    id_to_name[29] = "PLACEHOLDER"
-    name_to_elements["PLACEHOLDER"] = 200
+    name_to_id_elements["PLACEHOLDER"] = (29, 200)
 
-    return id_to_name, name_to_elements
+    return name_to_id_elements
 
 # Function to create individual heatmaps for each detector
-def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elements):
+def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements):
     # Convert data to a DataFrame
     data = {'Detector': detector_ids, 'Element': element_ids, 'Hit': [1] * len(detector_ids)}
     df = pd.DataFrame(data)
@@ -47,18 +39,16 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
     # Create a single row of subplots
     fig = make_subplots(
         rows=1,  # one row 
-        cols=len(Z_ORDER),  
+        cols=len(name_to_id_elements),  
         shared_yaxes=True,
         horizontal_spacing=0, # no spacing between plots 
         vertical_spacing=0    
     )
     
-    for idx, detector_id in enumerate(Z_ORDER):
+    for idx, [detector_name, (detector_id, num_elements)] in enumerate(name_to_id_elements.items()):
         current_col = idx + 1  # Column index (1-based)
         
         detector_data = df[df['Detector'] == detector_id]
-        detector_name = id_to_name[detector_id]
-        num_elements = name_to_elements[detector_name]
         
         # Create hit matrix
         z_matrix = [[0] for _ in range(MAX_ELEMENT_ID)]
@@ -134,8 +124,8 @@ def create_detector_heatmaps(detector_ids, element_ids, id_to_name, name_to_elem
     return fig
 
 # Function to load data for a specific event and generate the combined heatmap figure
-def generate_combined_heatmap_figure(file_path, event_number, detector_id_to_name, detector_name_to_num_elements):
+def generate_combined_heatmap_figure(file_path, event_number, detector_name_to_id_elements):
     _, detector_ids, element_ids = read_event(file_path, event_number)
 
-    heatmap_fig = create_detector_heatmaps(detector_ids, element_ids, detector_id_to_name, detector_name_to_num_elements)
+    heatmap_fig = create_detector_heatmaps(detector_ids, element_ids, detector_name_to_id_elements)
     return heatmap_fig
