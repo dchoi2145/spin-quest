@@ -150,7 +150,7 @@ def update_heatmap(n_clicks, selected_detectors, event_number):
         removed_detector = prev_selected - curr_selected
         detector_name = list(removed_detector)[0]
         detector_name_to_id_elements[detector_name][2] = False
-    else:
+    elif len(curr_selected) > len(prev_selected):
         # A detector was checked
         added_detector = curr_selected - prev_selected
         detector_name = list(added_detector)[0]
