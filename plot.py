@@ -23,10 +23,10 @@ def get_detector_info(file_name):
             num_elements = int(split_line[2])
 
             if detector_id not in ids:
-                name_to_id_elements[detector_name] = (detector_id, num_elements)
+                name_to_id_elements[detector_name] = [detector_id, num_elements, True]
                 ids.add(detector_id)
 
-    name_to_id_elements["PLACEHOLDER"] = (29, 200)
+    name_to_id_elements["PLACEHOLDER"] = [29, 200, True]
 
     return name_to_id_elements
 
@@ -45,7 +45,13 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements):
         vertical_spacing=0    
     )
     
-    for idx, [detector_name, (detector_id, num_elements)] in enumerate(name_to_id_elements.items()):
+    offset = 0
+    for idx, [detector_name, (detector_id, num_elements, display)] in enumerate(name_to_id_elements.items()):
+        if not display:
+            offset += 1
+            continue
+        
+        idx = idx - offset
         current_col = idx + 1  # Column index (1-based)
         
         detector_data = df[df['Detector'] == detector_id]

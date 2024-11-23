@@ -47,7 +47,7 @@ initial_event_number = find_first_event_with_data(SPILL_PATH)
 
 # Get detector names
 detector_name_to_id_elements = get_detector_info(SPECTROMETER_INFO_PATH)
-detector_names = [key for key in detector_name_to_id_elements]
+initial_detector_names = [key for key in detector_name_to_id_elements]
 
 # Generate figure for the initial event
 initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, initial_event_number, detector_name_to_id_elements)
@@ -93,8 +93,8 @@ def create_page_layout(title, heatmap_fig):
                         dbc.CardBody([
                             dcc.Checklist(
                                 id="detector-checklist",
-                                options=[{'label': name, 'value': name} for name in detector_names],
-                                value=detector_names,
+                                options=[{'label': name, 'value': name} for name in initial_detector_names],
+                                value=initial_detector_names,
                                 inline=True,
                                 className="detector-checklist"
                             )
@@ -140,17 +140,27 @@ def display_page(pathname):
     prevent_initial_call=True
 )
 def update_heatmap(n_clicks, selected_detectors, event_number):
-    # Filter detector information based on selected detectors
-    filtered_detector_name_to_id_elements = {
-        name: detector_name_to_id_elements[name]
-        for name in selected_detectors
-    }
+    global initial_detector_names
+    prev_selected = set(initial_detector_names)
+    curr_selected = set(selected_detectors)
     
-    # Generate new heatmap figure with only selected detectors
+    # Determine which detector was toggled
+    if len(prev_selected) > len(curr_selected):
+        # A detector was unchecked
+        removed_detector = prev_selected - curr_selected
+        detector_name = list(removed_detector)[0]
+        detector_name_to_id_elements[detector_name][2] = False
+    else:
+        # A detector was checked
+        added_detector = curr_selected - prev_selected
+        detector_name = list(added_detector)[0]
+        detector_name_to_id_elements[detector_name][2] = True
+    initial_detector_names = selected_detectors
+    
     return generate_combined_heatmap_figure(
         SPILL_PATH, 
         event_number,
-        filtered_detector_name_to_id_elements
+        detector_name_to_id_elements
     )
 
 # callback for interval
