@@ -2,6 +2,7 @@ import numpy as np
 import uproot
 import time
 import os
+import json 
 
 # Function that checks if a file is still has data being written into it
 def is_file_still_writing(file_path, interval=0.1):
@@ -17,6 +18,12 @@ def is_file_still_writing(file_path, interval=0.1):
     # Returns False if the file size didn't change, and True if the file size did change
     return initial_size != new_size
 
+# Function for reading json file
+def read_json(file_name):
+    with open(file_name, 'r') as infile:
+        config = json.load(infile)
+
+    return config
 
 def store_data(file_path):
     # Creates NumPy Array that will store the data we are looking for

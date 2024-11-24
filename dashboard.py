@@ -1,15 +1,19 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State
-from open_root_file import find_first_event_with_data
+from open_root_file import find_first_event_with_data, read_json
 from plot import generate_combined_heatmap_figure, get_detector_info
 
 # CONSTANTS
 SPILL_PATH = "run_005591_spill_001903474_sraw.root"
 SPECTROMETER_INFO_PATH = "spectrometer.csv"
+DETECTOR_MAP_PATH = "detector_map.json"
 
 # Initialize the Dash app with Bootstrap theme and suppress callback exceptions
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
+
+# Read detector map
+detector_map = read_json(DETECTOR_MAP_PATH)
 
 # Navbar with "Menu" dropdown
 navbar = dbc.Navbar(
@@ -20,10 +24,7 @@ navbar = dbc.Navbar(
                     dbc.DropdownMenu(
                         label="Menu",
                         children=[
-                            dbc.DropdownMenuItem("All Stations", href="/stations"),
-                            dbc.DropdownMenuItem("Hodoscopes", href="/hodoscopes"),
-                            dbc.DropdownMenuItem("Prop Detectors", href="/prop-detectors"),
-                            dbc.DropdownMenuItem("DP Detectors", href="/dp-detectors"),
+                            dbc.DropdownMenuItem(key, href="/" + key) for key in detector_map
                         ],
                         nav=True,
                         in_navbar=True,
@@ -93,7 +94,7 @@ def create_page_layout(title, heatmap_fig):
                         dbc.CardBody([
                             dcc.Checklist(
                                 id="detector-checklist",
-                                options=[{'label': name, 'value': name} for name in initial_detector_names],
+                                options=[{'label': name, 'value': name} for name in detector_map[title]],
                                 value=initial_detector_names,
                                 inline=True,
                                 className="detector-checklist"
@@ -120,16 +121,35 @@ app.layout = html.Div([
 # Callback to update the content based on the URL
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def display_page(pathname):
-    if pathname == "/stations":
-        return create_page_layout("All Stations", initial_heatmap)
-    elif pathname == "/hodoscopes":
-        return create_page_layout("Hodoscopes", initial_heatmap)
-    elif pathname == "/prop-detectors":
-        return create_page_layout("Prop Detectors", initial_heatmap)
-    elif pathname == "/dp-detectors":
-        return create_page_layout("DP Detectors", initial_heatmap)
+    path = pathname.strip("/") if pathname else ""
+    
+    if path in detector_map:
+        for detector_name in detector_name_to_id_elements:
+            detector_name_to_id_elements[detector_name][2] = detector_name in detector_map[path]
+        
+        # Generate new heatmap with only selected detectors
+        station_heatmap = generate_combined_heatmap_figure(
+            SPILL_PATH, 
+            initial_event_number,
+            detector_name_to_id_elements
+        )
+        
+        # Create layout with only the detectors for this station
+        return create_page_layout(
+            path,
+            station_heatmap
+        )
     else:
-        return create_page_layout("All Stations", initial_heatmap)  # Default page
+        # Default to showing Station1
+        for detector_name in detector_name_to_id_elements:
+            detector_name_to_id_elements[detector_name][2] = detector_name in detector_map["Station1"]
+            
+        default_heatmap = generate_combined_heatmap_figure(
+            SPILL_PATH, 
+            initial_event_number,
+            detector_name_to_id_elements
+        )
+        return create_page_layout("Station 1", default_heatmap)
 
 # Callback to update the heatmap based on button click 
 @app.callback(
