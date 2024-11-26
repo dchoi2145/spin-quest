@@ -26,8 +26,6 @@ def get_detector_info(file_name):
                 name_to_id_elements[detector_name] = [detector_id, num_elements, True]
                 ids.add(detector_id)
 
-    name_to_id_elements["PLACEHOLDER"] = [29, 200, True]
-
     return name_to_id_elements
 
 # Function to create individual heatmaps for each detector

@@ -1,16 +1,24 @@
 {
-    "Station1": ["D0V", "D0Vp", "D0Xp", "D0X", "D0U", "D0Up"],        
-    "Hodoscope1": ["H1L", "H1R", "H1B", "H1T"],      
-    "DP-1": ["DP1TL", "DP1TR", "DP1BL", "DP1BR"],          
-    "Station2": ["D2V", "D2Vp", "D2Xp", "D2X", "D2U", "D2Up"],     
-    "Hodoscope2": ["H2R", "H2L", "H2T", "H2B"],  
-    "DP-2": ["DP2TL", "DP2TR", "DP2BL", "DP2BR"],         
-    "Station3+": ["D3pVp", "D3pV", "D3pXp", "D3pX", "D3pUp", "D3pU"],   
-    "Station3-": ["D3mVp", "D3mV", "D3mXp", "D3mX", "D3mUp", "D3mU"],    
-    "Hodoscope3": ["H3T", "H3B"],   
-    "Prop1": ["P1Y1", "P1Y2"],       
-    "Hodoscope4": ["H4Y1R", "H4Y1L"],   
-    "Prop2": ["P1X1", "P1X2"],       
-    "Hodoscope5": ["H4Y2R", "H4Y2L", "H4T", "H4B"],    
-    "Prop3": ["P2X1", "P2X2", "P2Y1", "P2Y2"]         
+    "Stations": {
+        "Station1": ["D0V", "D0Vp", "D0Xp", "D0X", "D0U", "D0Up"], 
+        "Station2": ["D2V", "D2Vp", "D2Xp", "D2X", "D2U", "D2Up"],  
+        "Station3+": ["D3pVp", "D3pV", "D3pXp", "D3pX", "D3pUp", "D3pU"], 
+        "Station3-": ["D3mVp", "D3mV", "D3mXp", "D3mX", "D3mUp", "D3mU"]
+    },
+    "Hodoscopes": {
+        "Hodoscope1": ["H1L", "H1R", "H1B", "H1T"],
+        "Hodoscope2": ["H2R", "H2L", "H2T", "H2B"],
+        "Hodoscope3": ["H3T", "H3B"],
+        "Hodoscope4": ["H4Y1R", "H4Y1L"],
+        "Hodoscope5": ["H4Y2R", "H4Y2L", "H4T", "H4B"]
+    },
+    "DPs": {
+        "DP-1": ["DP1TL", "DP1TR", "DP1BL", "DP1BR"],
+        "DP-2": ["DP2TL", "DP2TR", "DP2BL", "DP2BR"]
+    },
+    "Props": {                                  
+        "Prop1": ["P1Y1", "P1Y2"],        
+        "Prop2": ["P1X1", "P1X2"],           
+        "Prop3": ["P2X1", "P2X2", "P2Y1", "P2Y2"]  
+    }       
 }
