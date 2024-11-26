@@ -45,7 +45,7 @@ def store_data(file_path):
     run_data = np.array([detID, elemID, drift])
 
 # Function that reads event data from a ROOT file
-def read_event(file_path, event_number, quick_check=False):
+def read_event(file_path, event_number):
     with uproot.open(file_path) as file:
         # Adjust event_number to zero-based indexing
         entry_number = event_number - 1
@@ -63,13 +63,8 @@ def read_event(file_path, event_number, quick_check=False):
         detector_id = data["fAllHits.detectorID"][0]
         element_id = data["fAllHits.elementID"][0]
 
-    # Check if data is present for quick_check
-    if quick_check:
-        has_data = len(detector_id) > 0
-        return has_data, None, None
-
     # Return the detector IDs and element IDs directly
-    return None, detector_id, element_id
+    return detector_id, element_id
 
 def get_total_spills(file_path):
     with uproot.open(file_path) as file:
@@ -128,8 +123,8 @@ def find_first_event_with_data(file_path, starting_event=1):
     total_events = get_total_spills(file_path)
 
     for event_number in range(starting_event, total_events + 1):
-        has_data, _, _ = read_event(file_path, event_number, quick_check=True)
-        if has_data:
+        detector_id, element_id = read_event(file_path, event_number)
+        if len(detector_id) > 0:
             return event_number  
 
     return None  # Return None if no event with data is found
@@ -148,7 +143,7 @@ if __name__ == "__main__":
     print("Branches:", DY_tree.keys())
 
     # Read and print the event data
-    _, detector_id, element_id = read_event(file_path, event_number)
+    detector_id, element_id = read_event(file_path, event_number)
     print(f"Processed Event Number {event_number}")
     print(f"Detector IDs: {detector_id}")
     print(f"Element IDs: {element_id}")

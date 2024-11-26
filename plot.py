@@ -129,7 +129,7 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements):
 
 # Function to load data for a specific event and generate the combined heatmap figure
 def generate_combined_heatmap_figure(file_path, event_number, detector_name_to_id_elements):
-    _, detector_ids, element_ids = read_event(file_path, event_number)
+    detector_ids, element_ids = read_event(file_path, event_number)
 
     heatmap_fig = create_detector_heatmaps(detector_ids, element_ids, detector_name_to_id_elements)
     return heatmap_fig
