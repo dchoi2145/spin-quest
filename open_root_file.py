@@ -60,7 +60,7 @@ def read_event(file_path, event_number):
         data = tree.arrays(branches, entry_start=entry_number, entry_stop=entry_number + 1, library="np")
 
         # Extract the arrays for this event
-        detector_id = data["fAllHits.detectorID"][0]
+        detector_id = data["fAllHits.detectorID"][0] # these are of length 1 
         element_id = data["fAllHits.elementID"][0]
 
     # Return the detector IDs and element IDs directly
