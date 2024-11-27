@@ -2,31 +2,10 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from plotly.subplots import make_subplots
-from open_root_file import read_event
+from file_read import read_event
 
 # CONSTANTS
 MAX_ELEMENT_ID = 400
-
-# Function for reading detector names from spectrometer CSV file
-def get_detector_info(file_name):
-    name_to_id_elements = dict()
-    ids = set()
-
-    with open(file_name, 'r') as infile:
-        # skip first line
-        infile.readline()
-
-        for line in infile.readlines():
-            split_line = line.split(",")
-            detector_id = int(split_line[0])
-            detector_name = split_line[1]
-            num_elements = int(split_line[2])
-
-            if detector_id not in ids:
-                name_to_id_elements[detector_name] = [detector_id, num_elements, True]
-                ids.add(detector_id)
-
-    return name_to_id_elements
 
 # Function to create individual heatmaps for each detector
 def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements):

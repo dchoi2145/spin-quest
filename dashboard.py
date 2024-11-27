@@ -1,8 +1,8 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State
-from open_root_file import find_first_event_with_data
-from plot import generate_combined_heatmap_figure, get_detector_info
+from file_read import read_events, get_detector_info
+from plot import generate_combined_heatmap_figure
 
 # CONSTANTS
 SPILL_PATH = "run_005591_spill_001903474_sraw.root"

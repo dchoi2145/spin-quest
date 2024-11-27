@@ -2,7 +2,7 @@ import sys
 import os
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from open_root_file import is_file_still_writing
+from file_read import is_file_still_writing
 
 class Handler(FileSystemEventHandler):
     def on_any_event(self, event):
