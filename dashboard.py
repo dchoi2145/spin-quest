@@ -9,6 +9,25 @@ SPILL_PATH = "run_005591_spill_001903474_sraw.root"
 SPECTROMETER_INFO_PATH = "spectrometer.csv"
 DETECTOR_MAP = "detector_map.json"
 
+# Get detector map info
+detector_info = read_json(DETECTOR_MAP)
+
+# Get spectrometer info
+detector_name_to_id_elements = get_detector_info(SPECTROMETER_INFO_PATH)
+initial_detector_names = [key for key in detector_name_to_id_elements]
+
+# Debugging: Print all detector names and their configurations
+print("Detector Configurations:")
+for detector, details in detector_name_to_id_elements.items():
+    print(f"{detector}: {details}")
+
+# Get events from spill file
+detector_ids, element_ids = read_events(SPILL_PATH)
+initial_event_number = find_first_non_empty(detector_ids)
+
+# Generate figure for the initial event
+initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
+
 # Initialize the Dash app with Bootstrap theme and suppress callback exceptions
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
 
@@ -21,11 +40,8 @@ navbar = dbc.Navbar(
                     dbc.DropdownMenu(
                         label="Menu",
                         children=[
-                            dbc.DropdownMenuItem("All Stations", href="/stations"),
-                            dbc.DropdownMenuItem("Hodoscopes", href="/hodoscopes"),
-                            dbc.DropdownMenuItem("Prop Detectors", href="/prop-detectors"),
-                            dbc.DropdownMenuItem("DP Detectors", href="/dp-detectors"),
-                        ],
+                            dbc.DropdownMenuItem("All Stations", href="/all-stations")
+                        ] + [dbc.DropdownMenuItem(detector_type, href="/" + detector_type) for detector_type in detector_info],
                         nav=True,
                         in_navbar=True,
                         toggle_style={"cursor": "pointer"},
@@ -43,24 +59,8 @@ navbar = dbc.Navbar(
     className="mb-4"
 )
 
-# Get detector names
-detector_name_to_id_elements = get_detector_info(SPECTROMETER_INFO_PATH)
-initial_detector_names = [key for key in detector_name_to_id_elements]
-
-# Debugging: Print all detector names and their configurations
-print("Detector Configurations:")
-for detector, details in detector_name_to_id_elements.items():
-    print(f"{detector}: {details}")
-
-# Get events from spill file
-detector_ids, element_ids = read_events(SPILL_PATH)
-initial_event_number = find_first_non_empty(detector_ids)
-
-# Generate figure for the initial event
-initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
-
 # Layout for each page
-def create_page_layout(title, heatmap_fig, include_checkboxes=False, specific_checkboxes=None):
+def create_page_layout(title, heatmap_fig, checkboxes=None):
     layout = html.Div([
         html.H1(title, className="text-center my-4"),
         dbc.Container([
@@ -96,7 +96,7 @@ def create_page_layout(title, heatmap_fig, include_checkboxes=False, specific_ch
         ]),
     ])
 
-    if include_checkboxes and specific_checkboxes:
+    if checkboxes:
         # Add the checkbox section with specific options
         layout.children.append(
             dbc.Row([
@@ -106,8 +106,8 @@ def create_page_layout(title, heatmap_fig, include_checkboxes=False, specific_ch
                         dbc.CardBody([
                             dcc.Checklist(
                                 id="detector-checklist",
-                                options=[{'label': name, 'value': name} for name in specific_checkboxes],
-                                value=specific_checkboxes,
+                                options=[{'label': name, 'value': name} for name in checkboxes],
+                                value=checkboxes,
                                 inline=True,
                                 className="detector-checklist"
                             )
@@ -123,35 +123,29 @@ def create_page_layout(title, heatmap_fig, include_checkboxes=False, specific_ch
 app.layout = html.Div([
     dcc.Location(id="url", refresh=False),
     navbar,
-    html.Div(id="page-content", children=create_page_layout("All Stations", initial_heatmap, include_checkboxes=False))
+    html.Div(id="page-content", children=create_page_layout("All Stations", initial_heatmap, checkboxes=False))
 ])
 
 # Callback to update the content based on the URL
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def display_page(pathname):
-    if pathname == "/stations":
-        return create_page_layout("All Stations", initial_heatmap, include_checkboxes=False)
-    elif pathname == "/hodoscopes":
-        # Adjust keys based on debug output
-        detector_keys = ["D0V", "D0Vp", "D0Xp"]  # Match exact names
+    if pathname == "/all-stations":
+        return create_page_layout("All Stations", initial_heatmap, checkboxes=False)
+    else:
+        pathname = pathname[1:]
+        detector_keys = [name for detector in detector_info[pathname] for name in detector_info[pathname][detector]]
         valid_detectors = {key: detector_name_to_id_elements[key] for key in detector_keys if key in detector_name_to_id_elements}
-        print("Valid Detectors for Hodoscopes:", valid_detectors.keys())  # Debugging output
+        print("Valid Detectors for {}:".format(pathname), valid_detectors.keys())  # Debugging output
 
         if valid_detectors:
-            hodoscope_heatmap = generate_combined_heatmap_figure(SPILL_PATH, initial_event_number, valid_detectors)
-            return create_page_layout("Hodoscopes", hodoscope_heatmap, include_checkboxes=True, specific_checkboxes=list(valid_detectors.keys()))
+            heatmap = generate_combined_heatmap_figure(SPILL_PATH, detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
+            return create_page_layout(pathname, heatmap, checkboxes=list(valid_detectors.keys()))
         else:
             return html.Div([
                 html.H1("Error: No valid detectors found", className="text-center my-4"),
-                html.P("The requested detectors (D0V, D0Vp, D0Xp) are not available. Please check the detector configuration."),
+                html.P("The requested detectors {} are not available. Please check the detector configuration.".format(detector_keys)),
             ])
-    elif pathname == "/prop-detectors":
-        return create_page_layout("Prop Detectors", initial_heatmap, include_checkboxes=True, specific_checkboxes=initial_detector_names)
-    elif pathname == "/dp-detectors":
-        return create_page_layout("DP Detectors", initial_heatmap, include_checkboxes=True, specific_checkboxes=initial_detector_names)
-    else:
-        return create_page_layout("All Stations", initial_heatmap, include_checkboxes=False)  # Default page
-
+        
 # Callback to update the heatmap based on button click for the hodoscope page
 @app.callback(
     Output('heatmap-graph', 'figure'),
@@ -161,19 +155,14 @@ def display_page(pathname):
     prevent_initial_call=True
 )
 def update_heatmap(n_clicks, selected_detectors, event_number):
-    # Only allow updates for the detectors on the Hodoscope page
-    detector_keys = ["D0V", "D0Vp", "D0Xp"]  # Match exact names
-    valid_detectors = {key: detector_name_to_id_elements[key] for key in detector_keys if key in detector_name_to_id_elements}
-
-    # Update only the selected detectors
-    for key in valid_detectors.keys():
+    for key in detector_name_to_id_elements:
         if key in selected_detectors:
-            valid_detectors[key][2] = True  # Enable detector
+            detector_name_to_id_elements[key][2] = True  # Enable detector
         else:
-            valid_detectors[key][2] = False  # Disable detector
+            detector_name_to_id_elements[key][2] = False  # Disable detector
 
     # Generate the updated heatmap
-    return generate_combined_heatmap_figure(SPILL_PATH, event_number, valid_detectors)
+    return generate_combined_heatmap_figure(SPILL_PATH, event_number, detector_name_to_id_elements)
 
 if __name__ == "__main__":
     app.run_server(debug=False)
