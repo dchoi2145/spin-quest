@@ -54,9 +54,10 @@ for detector, details in detector_name_to_id_elements.items():
 
 # Get events from spill file
 detector_ids, element_ids = read_events(SPILL_PATH)
+initial_event_number = find_first_non_empty(detector_ids)
 
 # Generate figure for the initial event
-initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, initial_event_number, detector_name_to_id_elements)
+initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
 
 # Layout for each page
 def create_page_layout(title, heatmap_fig, include_checkboxes=False, specific_checkboxes=None):

@@ -2,7 +2,6 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from plotly.subplots import make_subplots
-from file_read import read_event
 
 # CONSTANTS
 MAX_ELEMENT_ID = 400
@@ -107,8 +106,6 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements):
     return fig
 
 # Function to load data for a specific event and generate the combined heatmap figure
-def generate_combined_heatmap_figure(file_path, event_number, detector_name_to_id_elements):
-    detector_ids, element_ids = read_event(file_path, event_number)
-
+def generate_combined_heatmap_figure(file_path, detector_ids, element_ids, detector_name_to_id_elements):
     heatmap_fig = create_detector_heatmaps(detector_ids, element_ids, detector_name_to_id_elements)
     return heatmap_fig
