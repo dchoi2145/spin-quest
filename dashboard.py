@@ -1,12 +1,13 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State
-from file_read import read_events, get_detector_info
+from file_read import read_json, get_detector_info, find_first_non_empty, read_events
 from plot import generate_combined_heatmap_figure
 
 # CONSTANTS
 SPILL_PATH = "run_005591_spill_001903474_sraw.root"
 SPECTROMETER_INFO_PATH = "spectrometer.csv"
+DETECTOR_MAP = "detector_map.json"
 
 # Initialize the Dash app with Bootstrap theme and suppress callback exceptions
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
@@ -42,9 +43,6 @@ navbar = dbc.Navbar(
     className="mb-4"
 )
 
-# Set initial event number
-initial_event_number = find_first_event_with_data(SPILL_PATH)
-
 # Get detector names
 detector_name_to_id_elements = get_detector_info(SPECTROMETER_INFO_PATH)
 initial_detector_names = [key for key in detector_name_to_id_elements]
@@ -53,6 +51,9 @@ initial_detector_names = [key for key in detector_name_to_id_elements]
 print("Detector Configurations:")
 for detector, details in detector_name_to_id_elements.items():
     print(f"{detector}: {details}")
+
+# Get events from spill file
+detector_ids, element_ids = read_events(SPILL_PATH)
 
 # Generate figure for the initial event
 initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, initial_event_number, detector_name_to_id_elements)

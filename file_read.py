@@ -70,8 +70,4 @@ def read_events(file_path):
         detector_ids = data["fAllHits.detectorID"]
         element_ids = data["fAllHits.elementID"]
     
-    first_non_empty = find_first_non_empty(detector_ids)
-    if first_non_empty >= 0:
-        return detector_ids[first_non_empty:], element_ids[first_non_empty:]
-    
     return detector_ids, element_ids
