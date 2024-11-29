@@ -26,7 +26,7 @@ detector_ids, element_ids = read_events(SPILL_PATH)
 initial_event_number = find_first_non_empty(detector_ids)
 
 # Generate figure for the initial event
-initial_heatmap = generate_combined_heatmap_figure(SPILL_PATH, detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
+initial_heatmap = generate_combined_heatmap_figure(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
 
 # Initialize the Dash app with Bootstrap theme and suppress callback exceptions
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
@@ -129,22 +129,23 @@ app.layout = html.Div([
 # Callback to update the content based on the URL
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def display_page(pathname):
-    if pathname == "/all-stations":
+    if pathname == "/all-stations" or pathname == "/":
+        for detector in detector_name_to_id_elements:
+            detector_name_to_id_elements[detector][-1] = True
+        
+        initial_heatmap = generate_combined_heatmap_figure(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
         return create_page_layout("All Stations", initial_heatmap, checkboxes=False)
     else:
         pathname = pathname[1:]
         detector_keys = [name for detector in detector_info[pathname] for name in detector_info[pathname][detector]]
-        valid_detectors = {key: detector_name_to_id_elements[key] for key in detector_keys if key in detector_name_to_id_elements}
-        print("Valid Detectors for {}:".format(pathname), valid_detectors.keys())  # Debugging output
+        for detector in detector_name_to_id_elements:
+            if detector in detector_keys:
+                detector_name_to_id_elements[detector][-1] = True
+            else:
+                detector_name_to_id_elements[detector][-1] = False 
 
-        if valid_detectors:
-            heatmap = generate_combined_heatmap_figure(SPILL_PATH, detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
-            return create_page_layout(pathname, heatmap, checkboxes=list(valid_detectors.keys()))
-        else:
-            return html.Div([
-                html.H1("Error: No valid detectors found", className="text-center my-4"),
-                html.P("The requested detectors {} are not available. Please check the detector configuration.".format(detector_keys)),
-            ])
+        initial_heatmap = generate_combined_heatmap_figure(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
+        return create_page_layout(pathname, initial_heatmap, checkboxes=detector_keys)
         
 # Callback to update the heatmap based on button click for the hodoscope page
 @app.callback(
