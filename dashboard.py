@@ -134,7 +134,7 @@ def display_page(pathname):
             detector_name_to_id_elements[detector][-1] = True
         
         initial_heatmap = generate_combined_heatmap_figure(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
-        return create_page_layout("All Stations", initial_heatmap, checkboxes=False)
+        return create_page_layout("All Stations", initial_heatmap, checkboxes=[detector for detector in detector_name_to_id_elements])
     else:
         pathname = pathname[1:]
         detector_keys = [name for detector in detector_info[pathname] for name in detector_info[pathname][detector]]
@@ -147,23 +147,28 @@ def display_page(pathname):
         initial_heatmap = generate_combined_heatmap_figure(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
         return create_page_layout(pathname, initial_heatmap, checkboxes=detector_keys)
         
-# Callback to update the heatmap based on button click for the hodoscope page
+# Callback based on buttonclick and checkboxes
 @app.callback(
     Output('heatmap-graph', 'figure'),
     [Input('update-button', 'n_clicks'),
-     Input('detector-checklist', 'value')],
-    [State('event-number-input', 'value')],
+     Input('detector-checklist', 'value'),
+     Input('event-number-input', 'value')],
     prevent_initial_call=True
 )
 def update_heatmap(n_clicks, selected_detectors, event_number):
+    selected_detectors = set(selected_detectors)
     for key in detector_name_to_id_elements:
-        if key in selected_detectors:
-            detector_name_to_id_elements[key][2] = True  # Enable detector
-        else:
-            detector_name_to_id_elements[key][2] = False  # Disable detector
-
-    # Generate the updated heatmap
-    return generate_combined_heatmap_figure(SPILL_PATH, event_number, detector_name_to_id_elements)
+        detector_name_to_id_elements[key][2] = key in selected_detectors
+            
+    if event_number is not None:
+        global initial_event_number
+        initial_event_number = event_number
+        
+    return generate_combined_heatmap_figure(
+        detector_ids[initial_event_number], 
+        element_ids[initial_event_number], 
+        detector_name_to_id_elements
+    )
 
 if __name__ == "__main__":
     app.run_server(debug=False)
