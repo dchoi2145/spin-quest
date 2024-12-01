@@ -151,8 +151,8 @@ def display_page(pathname):
 @app.callback(
     Output('heatmap-graph', 'figure'),
     [Input('update-button', 'n_clicks'),
-     Input('detector-checklist', 'value'),
-     Input('event-number-input', 'value')],
+     Input('detector-checklist', 'value')],
+    State('event-number-input', 'value'),
     prevent_initial_call=True
 )
 def update_heatmap(n_clicks, selected_detectors, event_number):
