@@ -2,7 +2,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State
 from file_read import read_json, get_detector_info, find_first_non_empty, read_events
-from plot import generate_combined_heatmap_figure
+from plot import create_detector_heatmaps
 
 # CONSTANTS
 SPILL_PATH = "run_005591_spill_001903474_sraw.root"
@@ -26,7 +26,7 @@ detector_ids, element_ids = read_events(SPILL_PATH)
 initial_event_number = find_first_non_empty(detector_ids)
 
 # Generate figure for the initial event
-initial_heatmap = generate_combined_heatmap_figure(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
+initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
 
 # Initialize the Dash app with Bootstrap theme and suppress callback exceptions
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
@@ -60,7 +60,7 @@ navbar = dbc.Navbar(
 )
 
 # Layout for each page
-def create_page_layout(title, heatmap_fig, checkboxes=None):
+def create_page_layout(title, detector_group, checkboxes=None):
     layout = html.Div([
         html.H1(title, className="text-center my-4"),
         dbc.Container([
@@ -83,16 +83,16 @@ def create_page_layout(title, heatmap_fig, checkboxes=None):
                     ),
                 ], width=12, className="text-center mb-3")
             ]),
-            dbc.Row([
+            *[dbc.Row([
                 dbc.Col([
+                    html.H3(group_name, className="text-center mb-3"),
                     dcc.Graph(
-                        figure=heatmap_fig,
-                        id="heatmap-graph",
+                        id=f"heatmap-{group_name.lower().replace(' ', '-')}",
                         style={"width": "100%"},
                         config={"displayModeBar": True, "displaylogo": False}
                     )
                 ])
-            ]),
+            ], className="mb-4") for group_name in detector_group]
         ]),
     ])
 
@@ -133,7 +133,7 @@ def display_page(pathname):
         for detector in detector_name_to_id_elements:
             detector_name_to_id_elements[detector][-1] = True
         
-        initial_heatmap = generate_combined_heatmap_figure(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
+        initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
         return create_page_layout("All Stations", initial_heatmap, checkboxes=[detector for detector in detector_name_to_id_elements])
     else:
         pathname = pathname[1:]
@@ -144,7 +144,7 @@ def display_page(pathname):
             else:
                 detector_name_to_id_elements[detector][-1] = False 
 
-        initial_heatmap = generate_combined_heatmap_figure(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
+        initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
         return create_page_layout(pathname, initial_heatmap, checkboxes=detector_keys)
         
 # Callback based on buttonclick and checkboxes
@@ -164,7 +164,7 @@ def update_heatmap(n_clicks, selected_detectors, event_number):
         global initial_event_number
         initial_event_number = event_number
         
-    return generate_combined_heatmap_figure(
+    return create_detector_heatmaps(
         detector_ids[initial_event_number], 
         element_ids[initial_event_number], 
         detector_name_to_id_elements
