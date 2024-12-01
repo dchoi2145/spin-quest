@@ -13,7 +13,7 @@ DETECTOR_MAP = "detector_map.json"
 detector_info = read_json(DETECTOR_MAP)
 
 # Get spectrometer info
-detector_name_to_id_elements = get_detector_info(SPECTROMETER_INFO_PATH)
+detector_name_to_id_elements, max_elements = get_detector_info(SPECTROMETER_INFO_PATH)
 initial_detector_names = [key for key in detector_name_to_id_elements]
 
 # Debugging: Print all detector names and their configurations
@@ -26,7 +26,7 @@ detector_ids, element_ids = read_events(SPILL_PATH)
 initial_event_number = find_first_non_empty(detector_ids)
 
 # Generate figure for the initial event
-initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
+initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements, max_elements)
 
 # Initialize the Dash app with Bootstrap theme and suppress callback exceptions
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
@@ -60,7 +60,7 @@ navbar = dbc.Navbar(
 )
 
 # Layout for each page
-def create_page_layout(title, detector_group, checkboxes=None):
+def create_page_layout(title, heatmap_fig, checkboxes=None):
     layout = html.Div([
         html.H1(title, className="text-center my-4"),
         dbc.Container([
@@ -83,16 +83,16 @@ def create_page_layout(title, detector_group, checkboxes=None):
                     ),
                 ], width=12, className="text-center mb-3")
             ]),
-            *[dbc.Row([
+            dbc.Row([
                 dbc.Col([
-                    html.H3(group_name, className="text-center mb-3"),
                     dcc.Graph(
-                        id=f"heatmap-{group_name.lower().replace(' ', '-')}",
+                        figure=heatmap_fig,
+                        id="heatmap-graph",
                         style={"width": "100%"},
                         config={"displayModeBar": True, "displaylogo": False}
                     )
                 ])
-            ], className="mb-4") for group_name in detector_group]
+            ])
         ]),
     ])
 
@@ -133,7 +133,7 @@ def display_page(pathname):
         for detector in detector_name_to_id_elements:
             detector_name_to_id_elements[detector][-1] = True
         
-        initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
+        initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements, max_elements)
         return create_page_layout("All Stations", initial_heatmap, checkboxes=[detector for detector in detector_name_to_id_elements])
     else:
         pathname = pathname[1:]
@@ -144,7 +144,7 @@ def display_page(pathname):
             else:
                 detector_name_to_id_elements[detector][-1] = False 
 
-        initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements)
+        initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements, max_elements)
         return create_page_layout(pathname, initial_heatmap, checkboxes=detector_keys)
         
 # Callback based on buttonclick and checkboxes
@@ -167,7 +167,8 @@ def update_heatmap(n_clicks, selected_detectors, event_number):
     return create_detector_heatmaps(
         detector_ids[initial_event_number], 
         element_ids[initial_event_number], 
-        detector_name_to_id_elements
+        detector_name_to_id_elements,
+        max_elements
     )
 
 if __name__ == "__main__":

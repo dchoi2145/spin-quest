@@ -3,11 +3,8 @@ import plotly.graph_objects as go
 
 from plotly.subplots import make_subplots
 
-# CONSTANTS
-MAX_ELEMENT_ID = 400
-
 # Function to create individual heatmaps for each detector
-def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements):
+def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements, max_element_id):
     # Convert data to a DataFrame
     data = {'Detector': detector_ids, 'Element': element_ids, 'Hit': [1] * len(detector_ids)}
     df = pd.DataFrame(data)
@@ -33,9 +30,9 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements):
         detector_data = df[df['Detector'] == detector_id]
         
         # Create hit matrix
-        z_matrix = [[0] for _ in range(MAX_ELEMENT_ID)]
-        block_height = int(MAX_ELEMENT_ID / num_elements)
-        hover_text = [[f"Element ID: {i//block_height}, -"] for i in range(MAX_ELEMENT_ID)]
+        z_matrix = [[0] for _ in range(max_element_id)]
+        block_height = int(max_element_id / num_elements)
+        hover_text = [[f"Element ID: {i//block_height}, -"] for i in range(max_element_id)]
         
         # Fill hits
         for _, row in detector_data.iterrows():
@@ -44,7 +41,7 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements):
                 start_idx = element_idx * block_height
                 end_idx = start_idx + block_height
                 for i in range(start_idx, end_idx):
-                    if i < MAX_ELEMENT_ID:
+                    if i < max_element_id:
                         z_matrix[i] = [1]
                         hover_text[i] = [f"Element ID: {element_idx}, Hit"]
         
@@ -82,7 +79,7 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements):
     # Update only first plot y-axis
     fig.update_yaxes(
         title_text="Element ID",
-        range=[0, MAX_ELEMENT_ID],
+        range=[0, max_element_id],
         showticklabels=True,
         gridcolor="lightgray",
         dtick=20,

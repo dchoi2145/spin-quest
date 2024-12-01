@@ -8,6 +8,7 @@ import json
 def get_detector_info(file_name):
     name_to_id_elements = dict()
     ids = set()
+    max_elements = 0
 
     with open(file_name, 'r') as infile:
         # skip first line
@@ -18,12 +19,13 @@ def get_detector_info(file_name):
             detector_id = int(split_line[0])
             detector_name = split_line[1]
             num_elements = int(split_line[2])
+            max_elements = max(max_elements, num_elements)
 
             if detector_id not in ids:
                 name_to_id_elements[detector_name] = [detector_id, num_elements, True]
                 ids.add(detector_id)
 
-    return name_to_id_elements
+    return name_to_id_elements, max_elements
 
 # Function for reading json file
 def read_json(file_name):
