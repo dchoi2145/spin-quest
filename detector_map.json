@@ -17,8 +17,8 @@
         "DP-2": ["DP2TL", "DP2TR", "DP2BL", "DP2BR"]
     },
     "Props": {                                  
-        "Prop1": ["P1Y1", "P1Y2"],        
-        "Prop2": ["P1X1", "P1X2"],           
-        "Prop3": ["P2X1", "P2X2", "P2Y1", "P2Y2"]  
+        "Prop1": ["P1H9f", "P1H9b"],        
+        "Prop2": ["P1V9f", "P1V9b"],           
+        "Prop3": ["P2V1f", "P2V1b", "P2H9f", "P2H9b"]  
     }       
 }

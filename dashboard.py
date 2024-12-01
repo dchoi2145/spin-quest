@@ -101,7 +101,7 @@ def create_page_layout(title, heatmap_fig, checkboxes=None):
         layout.children.append(
             dbc.Row([
                 dbc.Col([
-                    html.Label("Select Detectors to Display:", className="mb-2"),
+                    html.Label("Select Detectors to Display:", className="m-4"),
                     dbc.Card([
                         dbc.CardBody([
                             dcc.Checklist(
