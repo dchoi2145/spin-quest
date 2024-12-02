@@ -62,9 +62,9 @@ main_heatmap = create_detector_heatmaps(
 # Initialize Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
 
-# Checkbox View layout
-def checkbox_view_layout(title):
-    # Create individual checkbox elements with less spacing
+# Layout
+def layout():
+    # Create individual checkbox elements
     checkbox_elements = [
         html.Div(
             [
@@ -75,37 +75,43 @@ def checkbox_view_layout(title):
                     inline=True,
                 )
             ],
-            style={"display": "inline-block", "margin-right": "10px"}  # Reduced margin-right
+            style={"display": "inline-block", "margin-right": "10px"}
         )
         for group in group_to_detectors
     ]
 
     return html.Div([
-        html.H1(title, className="text-center my-4"),
+        html.H1(
+            "Detector Heatmap", 
+            className="text-center", 
+            style={"margin-bottom": "10px", "margin-top": "20px"}
+        ),
         dbc.Container([
             dbc.Row([
                 dbc.Col([
-                    html.Label("Select Event Number:"),
+                    html.Label("Select Event Number:", className="me-2"),
                     dcc.Input(id="event-number-input", type="number", value=initial_event_number, min=1, step=1),
                     dbc.Button("Update Plot", id="update-button", color="primary", className="ms-2"),
-                ], width=12, className="text-center mb-3"),
+                ], width=12, className="text-center mb-2"),
             ]),
-            dbc.Row([
-                dbc.Col([
-                    dcc.Graph(id="heatmap-graph", figure=main_heatmap),
-                ]),
-            ]),
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Select Detector Groups to Display:", className="mb-1"),  # Reduced margin-bottom for label
-                    html.Div(checkbox_elements, style={"margin-top": "0px", "white-space": "nowrap"}),  # Reduced margin-top for checkboxes
-                ], width=12, className="mb-5 mt-2"),
-            ]),
-        ]),
+            dcc.Graph(id="heatmap-graph", figure=main_heatmap, style={"margin-bottom": "5px"}),  # Further reduced margin-bottom
+            dbc.Card(
+                [
+                    dbc.CardHeader(
+                        "Select Detector Groups to Display:", 
+                        style={"font-weight": "bold", "font-size": "1.2rem", "background-color": "#f8f9fa"}
+                    ),
+                    dbc.CardBody(
+                        html.Div(checkbox_elements, style={"white-space": "nowrap", "overflow-x": "auto"})
+                    ),
+                ],
+                style={"margin-top": "2px", "border": "1px solid #ddd", "border-radius": "5px"}  # Minimal margin-top
+            ),
+        ], style={"padding": "10px"}),
     ])
 
-# App layout
-app.layout = checkbox_view_layout("Detector Heatmap")
+
+app.layout = layout()
 
 # Callback to update the heatmap dynamically
 @app.callback(

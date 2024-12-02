@@ -1,6 +1,5 @@
 import pandas as pd
 import plotly.graph_objects as go
-
 from plotly.subplots import make_subplots
 
 # Function to create individual heatmaps for each detector
@@ -14,7 +13,7 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements, max
         rows=1,  # one row 
         cols=len(name_to_id_elements),  
         shared_yaxes=True,
-        horizontal_spacing=0, # no spacing between plots 
+        horizontal_spacing=0,  # No spacing between plots
         vertical_spacing=0    
     )
     
@@ -89,14 +88,10 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements, max
 
     # Update layout
     fig.update_layout(
-        title=dict(
-            text="Detector Hit Heatmap by Detector",
-            y=0.98,
-            font=dict(size=16)
-        ),
         height=800,
-        margin=dict(t=100, b=40, l=40, r=20),
-        plot_bgcolor="white",
+        margin=dict(t=0, b=0, l=0, r=0),  # Remove margins
+        plot_bgcolor="rgba(0,0,0,0)",  # Transparent background for the plot
+        paper_bgcolor="rgba(0,0,0,0)",  # Transparent background for the paper
         showlegend=False
     )
 
