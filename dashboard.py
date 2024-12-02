@@ -1,6 +1,6 @@
 import dash
 import dash_bootstrap_components as dbc
-from dash import dcc, html, Input, Output, State
+from dash import dcc, html, Input, Output, State, ALL
 from file_read import read_json, get_detector_info, find_first_non_empty, read_events
 from plot import create_detector_heatmaps
 
@@ -62,58 +62,32 @@ main_heatmap = create_detector_heatmaps(
 # Initialize Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
 
-# Navbar
-def navbar(current_path):
-    return dbc.Navbar(
-        dbc.Container(
-            [
-                dbc.Nav(
-                    [
-                        dbc.NavLink("Main View", href="/main", active=(current_path == "/main" or current_path == "/")),
-                        dbc.NavLink("Checkbox View", href="/checkbox", active=(current_path == "/checkbox")),
-                    ],
-                    navbar=True,
-                ),
-            ],
-            fluid=True,
-        ),
-        color="dark",
-        dark=True,
-        className="mb-4",
-    )
-
-# Main View layout
-def main_view_layout(title, current_path):
-    return html.Div([
-        navbar(current_path),
-        html.H1(title, className="text-center my-4"),
-        dbc.Container([
-            dbc.Row([
-                dbc.Col([
-                    html.Label("Select Event Number:"),
-                    dcc.Input(id="event-number-input", type="number", value=initial_event_number, min=1, step=1),
-                    dbc.Button("Update Plot", id="update-button", color="primary", n_clicks=0),
-                ], width=12, className="text-center mb-3"),
-            ]),
-            dbc.Row([
-                dbc.Col([
-                    dcc.Graph(id="heatmap-graph", figure=main_heatmap),
-                ]),
-            ]),
-        ]),
-    ])
-
 # Checkbox View layout
-def checkbox_view_layout(title, current_path):
+def checkbox_view_layout(title):
+    # Create individual checkbox elements with less spacing
+    checkbox_elements = [
+        html.Div(
+            [
+                dcc.Checklist(
+                    options=[{"label": group, "value": group}],
+                    value=[group],  # Preselect the checkbox
+                    id={"type": "group-checklist", "index": group},
+                    inline=True,
+                )
+            ],
+            style={"display": "inline-block", "margin-right": "10px"}  # Reduced margin-right
+        )
+        for group in group_to_detectors
+    ]
+
     return html.Div([
-        navbar(current_path),
         html.H1(title, className="text-center my-4"),
         dbc.Container([
             dbc.Row([
                 dbc.Col([
                     html.Label("Select Event Number:"),
                     dcc.Input(id="event-number-input", type="number", value=initial_event_number, min=1, step=1),
-                    dbc.Button("Update Plot", id="update-button", color="primary", n_clicks=0),
+                    dbc.Button("Update Plot", id="update-button", color="primary", className="ms-2"),
                 ], width=12, className="text-center mb-3"),
             ]),
             dbc.Row([
@@ -123,40 +97,27 @@ def checkbox_view_layout(title, current_path):
             ]),
             dbc.Row([
                 dbc.Col([
-                    html.Label("Select Detector Groups to Display:"),
-                    dcc.Checklist(
-                        id="grouped-detector-checklist",
-                        options=[{"label": group, "value": group} for group in group_to_detectors],
-                        value=list(group_to_detectors),  # All selected by default
-                        inline=True,
-                    ),
-                ], width=12, className="mb-3"),
+                    html.Label("Select Detector Groups to Display:", className="mb-1"),  # Reduced margin-bottom for label
+                    html.Div(checkbox_elements, style={"margin-top": "0px", "white-space": "nowrap"}),  # Reduced margin-top for checkboxes
+                ], width=12, className="mb-5 mt-2"),
             ]),
         ]),
     ])
 
 # App layout
-app.layout = html.Div([
-    dcc.Location(id="url", refresh=False),
-    html.Div(id="page-content"),
-])
-
-# Callback to render the correct page
-@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
-def render_page(pathname):
-    if pathname == "/checkbox":
-        return checkbox_view_layout("Checkbox View", pathname)
-    else:
-        return main_view_layout("Main View", pathname)
+app.layout = checkbox_view_layout("Detector Heatmap")
 
 # Callback to update the heatmap dynamically
 @app.callback(
     Output("heatmap-graph", "figure"),
     [Input("update-button", "n_clicks"),
-     Input("grouped-detector-checklist", "value"),
-     State("event-number-input", "value")],
+     Input({"type": "group-checklist", "index": ALL}, "value")],
+    State("event-number-input", "value"),
 )
 def update_heatmap(n_clicks, selected_groups, event_number):
+    # Flatten selected groups from nested lists
+    selected_groups = [item for sublist in selected_groups for item in sublist if item]
+
     # Get detectors to display based on selected groups
     if selected_groups:
         selected_detectors = [
