@@ -7,168 +7,143 @@ from plot import create_detector_heatmaps
 # CONSTANTS
 SPILL_PATH = "run_005591_spill_001903474_sraw.root"
 SPECTROMETER_INFO_PATH = "spectrometer.csv"
-DETECTOR_MAP = "detector_map.json"
+DETECTOR_MAP_FILE = "detector_map.json"
 
-# Get detector map info
-detector_info = read_json(DETECTOR_MAP)
+# Load detector map from JSON
+detector_map = read_json(DETECTOR_MAP_FILE)
 
-# Get spectrometer info
+# Flatten detector_map into group_to_detectors
+group_to_detectors = {}
+for category, groups in detector_map.items():
+    for group_name, detectors in groups.items():
+        group_to_detectors[group_name] = detectors
+
+# Get detector info
 detector_name_to_id_elements, max_elements = get_detector_info(SPECTROMETER_INFO_PATH)
-initial_detector_names = [key for key in detector_name_to_id_elements]
-
-# Debugging: Print all detector names and their configurations
-print("Detector Configurations:")
-for detector, details in detector_name_to_id_elements.items():
-    print(f"{detector}: {details}")
-
-# Get events from spill file
 detector_ids, element_ids = read_events(SPILL_PATH)
 initial_event_number = find_first_non_empty(detector_ids)
 
-# Generate figure for the initial event
-initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements, max_elements)
-
-# Initialize the Dash app with Bootstrap theme and suppress callback exceptions
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
-
-# Navbar with "Menu" dropdown
-navbar = dbc.Navbar(
-    dbc.Container(
-        [
-            dbc.Nav(
-                [
-                    dbc.DropdownMenu(
-                        label="Menu",
-                        children=[
-                            dbc.DropdownMenuItem("All Stations", href="/all-stations")
-                        ] + [dbc.DropdownMenuItem(detector_type, href="/" + detector_type) for detector_type in detector_info],
-                        nav=True,
-                        in_navbar=True,
-                        toggle_style={"cursor": "pointer"},
-                        direction="down"
-                    )
-                ],
-                navbar=True,
-                className="ms-3"
-            ),
-        ],
-        fluid=True
-    ),
-    color="dark",
-    dark=True,
-    className="mb-4"
+# Generate initial heatmap
+initial_heatmap = create_detector_heatmaps(
+    detector_ids[initial_event_number],
+    element_ids[initial_event_number],
+    detector_name_to_id_elements,
+    max_elements,
 )
 
-# Layout for each page
-def create_page_layout(title, heatmap_fig, checkboxes=None):
-    layout = html.Div([
+# Initialize Dash app
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
+
+# Navbar
+def navbar(current_path):
+    return dbc.Navbar(
+        dbc.Container(
+            [
+                dbc.Nav(
+                    [
+                        dbc.NavLink("Main View", href="/main", active=(current_path == "/main" or current_path == "/")),
+                        dbc.NavLink("Checkbox View", href="/checkbox", active=(current_path == "/checkbox")),
+                    ],
+                    navbar=True,
+                ),
+            ],
+            fluid=True,
+        ),
+        color="dark",
+        dark=True,
+        className="mb-4",
+    )
+
+# Main View layout
+def main_view_layout(title, heatmap_fig, current_path):
+    return html.Div([
+        navbar(current_path),
         html.H1(title, className="text-center my-4"),
         dbc.Container([
             dbc.Row([
                 dbc.Col([
-                    html.Label("Select Event Number:", className="me-2"),
-                    dcc.Input(
-                        id="event-number-input",
-                        type="number",
-                        value=initial_event_number,
-                        min=1,
-                        step=1,
-                        className="me-2"
-                    ),
-                    dbc.Button(
-                        "Update Plot",
-                        id="update-button",
-                        color="primary",
-                        n_clicks=0
-                    ),
-                ], width=12, className="text-center mb-3")
+                    html.Label("Select Event Number:"),
+                    dcc.Input(id="event-number-input", type="number", value=initial_event_number, min=1, step=1),
+                    dbc.Button("Update Plot", id="update-button", color="primary", n_clicks=0),
+                ], width=12, className="text-center mb-3"),
             ]),
             dbc.Row([
                 dbc.Col([
-                    dcc.Graph(
-                        figure=heatmap_fig,
-                        id="heatmap-graph",
-                        style={"width": "100%"},
-                        config={"displayModeBar": True, "displaylogo": False}
-                    )
-                ])
-            ])
+                    dcc.Graph(id="heatmap-graph", figure=heatmap_fig),
+                ]),
+            ]),
         ]),
     ])
 
-    if checkboxes:
-        # Add the checkbox section with specific options
-        layout.children.append(
+# Checkbox View layout
+def checkbox_view_layout(title, heatmap_fig, current_path):
+    return html.Div([
+        navbar(current_path),
+        html.H1(title, className="text-center my-4"),
+        dbc.Container([
             dbc.Row([
                 dbc.Col([
-                    html.Label("Select Detectors to Display:", className="m-4"),
-                    dbc.Card([
-                        dbc.CardBody([
-                            dcc.Checklist(
-                                id="detector-checklist",
-                                options=[{'label': name, 'value': name} for name in checkboxes],
-                                value=checkboxes,
-                                inline=True,
-                                className="detector-checklist"
-                            )
-                        ])
-                    ])
-                ], width=12, className="mb-3")
-            ])
-        )
-
-    return layout
+                    html.Label("Select Event Number:"),
+                    dcc.Input(id="event-number-input", type="number", value=initial_event_number, min=1, step=1),
+                    dbc.Button("Update Plot", id="update-button", color="primary", n_clicks=0),
+                ], width=12, className="text-center mb-3"),
+            ]),
+            dbc.Row([
+                dbc.Col([
+                    dcc.Graph(id="heatmap-graph", figure=heatmap_fig),
+                ]),
+            ]),
+            dbc.Row([
+                dbc.Col([
+                    html.Label("Select Detector Groups to Display:"),
+                    dcc.Checklist(
+                        id="grouped-detector-checklist",
+                        options=[{"label": group, "value": group} for group in group_to_detectors],
+                        value=list(group_to_detectors),  # All selected by default
+                        inline=True,
+                    ),
+                ], width=12, className="mb-3"),
+            ]),
+        ]),
+    ])
 
 # App layout
 app.layout = html.Div([
     dcc.Location(id="url", refresh=False),
-    navbar,
-    html.Div(id="page-content", children=create_page_layout("All Stations", initial_heatmap, checkboxes=False))
+    html.Div(id="page-content"),
 ])
 
-# Callback to update the content based on the URL
+# Callback to render the correct page
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
-def display_page(pathname):
-    if pathname == "/all-stations" or pathname == "/":
-        for detector in detector_name_to_id_elements:
-            detector_name_to_id_elements[detector][-1] = True
-        
-        initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements, max_elements)
-        return create_page_layout("All Stations", initial_heatmap, checkboxes=[detector for detector in detector_name_to_id_elements])
+def render_page(pathname):
+    if pathname == "/checkbox":
+        return checkbox_view_layout("Checkbox View", initial_heatmap, pathname)
     else:
-        pathname = pathname[1:]
-        detector_keys = [name for detector in detector_info[pathname] for name in detector_info[pathname][detector]]
-        for detector in detector_name_to_id_elements:
-            if detector in detector_keys:
-                detector_name_to_id_elements[detector][-1] = True
-            else:
-                detector_name_to_id_elements[detector][-1] = False 
+        return main_view_layout("Main View", initial_heatmap, pathname)
 
-        initial_heatmap = create_detector_heatmaps(detector_ids[initial_event_number], element_ids[initial_event_number], detector_name_to_id_elements, max_elements)
-        return create_page_layout(pathname, initial_heatmap, checkboxes=detector_keys)
-        
-# Callback based on buttonclick and checkboxes
+# Callback to update the heatmap based on selected groups
 @app.callback(
-    Output('heatmap-graph', 'figure'),
-    [Input('update-button', 'n_clicks'),
-     Input('detector-checklist', 'value')],
-    State('event-number-input', 'value'),
-    prevent_initial_call=True
+    Output("heatmap-graph", "figure"),
+    [Input("update-button", "n_clicks"),
+     Input("grouped-detector-checklist", "value")],
+    State("event-number-input", "value"),
 )
-def update_heatmap(n_clicks, selected_detectors, event_number):
-    selected_detectors = set(selected_detectors)
-    for key in detector_name_to_id_elements:
-        detector_name_to_id_elements[key][2] = key in selected_detectors
-            
-    if event_number is not None:
-        global initial_event_number
-        initial_event_number = event_number
-        
+def update_heatmap(n_clicks, selected_groups, event_number):
+    # Get detectors to display based on selected groups
+    selected_detectors = [
+        detector for group in selected_groups for detector in group_to_detectors[group]
+    ]
+
+    # Update detector visibility
+    for detector in detector_name_to_id_elements:
+        detector_name_to_id_elements[detector][-1] = detector in selected_detectors
+
+    # Generate new heatmap
     return create_detector_heatmaps(
-        detector_ids[initial_event_number], 
-        element_ids[initial_event_number], 
+        detector_ids[event_number],
+        element_ids[event_number],
         detector_name_to_id_elements,
-        max_elements
+        max_elements,
     )
 
 if __name__ == "__main__":
