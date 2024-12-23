@@ -6,13 +6,9 @@ import os
 import shutil 
 from tqdm import tqdm
 from plotly.subplots import make_subplots
-from file_read import filter_excluded
 
 # Function to create individual heatmaps for each detector
 def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements, max_element_id, excluded_detector_ids):
-    # Filter data
-    detector_ids, element_ids = filter_excluded(detector_ids, element_ids, excluded_detector_ids)
-
     # Convert data to a DataFrame
     data = {'Detector': detector_ids, 'Element': element_ids, 'Hit': [1] * len(detector_ids)}
     df = pd.DataFrame(data)
@@ -28,7 +24,7 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements, max
     
     offset = 0
     for idx, [detector_name, (detector_id, num_elements, display)] in enumerate(name_to_id_elements.items()):
-        if not display:
+        if not display or detector_id in excluded_detector_ids:
             offset += 1
             continue
         
@@ -63,7 +59,9 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements, max
                 showscale=False,
                 xgap=0,  
                 ygap=0,  
-                hoverongaps=False
+                hoverongaps=False,
+                zmin=0,
+                zmax=1
             ),
             row=1, 
             col=current_col

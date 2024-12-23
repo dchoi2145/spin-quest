@@ -20,8 +20,8 @@ detector_ids, element_ids = read_events(choose_root())
 initial_event_number = find_first_non_empty(detector_ids)
 
 # Define excluded detectors
-excluded_detectors = ["D1V", "D1Vp", "D1X", "D1Xp", "D1U", "D1Up"]
-excluded_detector_ids = [detector_name_to_id_elements[d][0] for d in excluded_detectors if d in detector_name_to_id_elements]
+detectors_set = set([detector for group in group_to_detectors for detector in group_to_detectors[group]])
+excluded_detector_ids = set([detector_name_to_id_elements[d][0] for d in detector_name_to_id_elements if d not in detectors_set])
 
 # Create video if user requests it 
 video_response = input("Do you want to process the events in this root file into a video? (y/n): ")
