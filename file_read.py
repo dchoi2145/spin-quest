@@ -56,21 +56,64 @@ def find_first_non_empty(arr):
         
     return -1
 
+# Function for asking for user input
+def choose_option(options):
+    while True:
+        response = input("Please select an option by number: ")
+        if response.isnumeric():
+            choice = int(response) - 1
+            if choice >= 0 and choice < len(options):
+                break
+    
+    return choice
+
 # Function that reads events from ROOT file
 def read_events(file_path):
     detector_ids = []
     element_ids = []
+
     with uproot.open(file_path) as file:
+        # use user input to find tree
+        tree_names = file.keys()
+        if len(tree_names) == 0:
+            raise Exception("No trees found in ROOT file.")
+        
+        print("Trees found in file: ")
+        for i, tree_name in enumerate(tree_names, 1):
+            print("{}. ".format(i) + tree_name)
+        choice = choose_option(tree_names)
+        
         # get tree 
-        tree = file["QA_ana;1"]
+        tree = file[tree_names[choice]]
 
         # get branches
-        branches = ["detectorID", "elementID"]
+        detector_id_branches, element_id_branches = [], []
+        detector_id_choice, element_id_choice = 0, 0
+        for key in tree.keys():
+            if "detectorID" in key:
+                detector_id_branches.append(key)
+            if "elementID" in key:
+                element_id_branches.append(key)
+
+
+        if len(detector_id_branches) == 0 or len(element_id_branches) == 0:
+            raise Exception("Error: Not enough branches found.")
+        if len(detector_id_branches) > 1:
+            print("More than 2 valid branches found for detectorID. Please select the one you want.")
+            for i, branch in enumerate(detector_id_branches, 1):
+                print("{}. ".format(i) + branch)
+            detector_id_choice = choose_option(detector_id_branches)
+        if len(element_id_branches) > 1:
+            print("More than 2 valid branches found for elementID. Please select the one you want.")
+            for i, branch in enumerate(element_id_branches, 1):
+                print("{}. ".format(i) + branch)
+            element_id_choice = choose_option(element_id_branches)
 
         # get detector and element ids 
-        data = tree.arrays(branches, library="np")
-        detector_ids = data[branches[0]]
-        element_ids = data[branches[1]]
+        possible_detector_ids = tree.arrays(detector_id_branches, library="np")
+        possible_element_ids = tree.arrays(element_id_branches, library="np")
+        detector_ids = possible_detector_ids[detector_id_branches[detector_id_choice]]
+        element_ids = possible_element_ids[element_id_branches[element_id_choice]]
     
     return detector_ids, element_ids
 
@@ -84,11 +127,6 @@ def choose_root(directory="./root_files"):
     for i, file in enumerate(root_files, 1):
         print("{}. ".format(i) + file)
 
-    while True:
-        response = input("Please select a file by number: ")
-        if response.isnumeric():
-            choice = int(response) - 1
-            if choice >= 0 and choice < len(root_files):
-                break
+    choice = choose_option(root_files)
 
     return os.path.join(directory, root_files[choice])
