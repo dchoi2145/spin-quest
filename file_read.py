@@ -62,14 +62,33 @@ def read_events(file_path):
     element_ids = []
     with uproot.open(file_path) as file:
         # get tree 
-        tree = file["save"]
+        tree = file["QA_ana;1"]
 
         # get branches
-        branches = ["fAllHits.detectorID", "fAllHits.elementID"]
+        branches = ["detectorID", "elementID"]
 
         # get detector and element ids 
         data = tree.arrays(branches, library="np")
-        detector_ids = data["fAllHits.detectorID"]
-        element_ids = data["fAllHits.elementID"]
+        detector_ids = data[branches[0]]
+        element_ids = data[branches[1]]
     
     return detector_ids, element_ids
+
+# Function for choosing which root file to read
+def choose_root(directory="./root_files"):
+    root_files = os.listdir(directory)
+    if len(root_files) == 0:
+        raise Exception("No root files found on system.")
+
+    print("Root files found on system:")
+    for i, file in enumerate(root_files, 1):
+        print("{}. ".format(i) + file)
+
+    while True:
+        response = input("Please select a file by number: ")
+        if response.isnumeric():
+            choice = int(response) - 1
+            if choice >= 0 and choice < len(root_files):
+                break
+
+    return os.path.join(directory, root_files[choice])

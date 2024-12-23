@@ -1,11 +1,10 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State, ALL
-from file_read import read_json, get_detector_info, find_first_non_empty, read_events
+from file_read import read_json, get_detector_info, find_first_non_empty, read_events, choose_root
 from plot import create_detector_heatmaps
 
 # CONSTANTS
-SPILL_PATH = "run_005591_spill_001903474_sraw.root"
 SPECTROMETER_INFO_PATH = "spectrometer.csv"
 DETECTOR_MAP_FILE = "detector_map.json"
 
@@ -20,7 +19,7 @@ for category, groups in detector_map.items():
 
 # Get detector info
 detector_name_to_id_elements, max_elements = get_detector_info(SPECTROMETER_INFO_PATH)
-detector_ids, element_ids = read_events(SPILL_PATH)
+detector_ids, element_ids = read_events(choose_root())
 initial_event_number = find_first_non_empty(detector_ids)
 
 # Define excluded detectors
