@@ -26,13 +26,6 @@ initial_event_number = find_first_non_empty(detector_ids)
 excluded_detectors = ["D1V", "D1Vp", "D1X", "D1Xp", "D1U", "D1Up"]
 excluded_detector_ids = [detector_name_to_id_elements[d][0] for d in excluded_detectors if d in detector_name_to_id_elements]
 
-# Remove excluded detectors from detector_name_to_id_elements
-filtered_detector_name_to_id_elements = {
-    key: value
-    for key, value in detector_name_to_id_elements.items()
-    if key not in excluded_detectors
-}
-
 # Filter out excluded detectors from the event data
 def filter_excluded(detector_ids, element_ids, excluded_ids):
     filtered_detector_ids = []
@@ -54,7 +47,7 @@ filtered_detector_ids, filtered_element_ids = filter_excluded(
 main_heatmap = create_detector_heatmaps(
     filtered_detector_ids,
     filtered_element_ids,
-    filtered_detector_name_to_id_elements,
+    detector_name_to_id_elements,
     max_elements,
 )
 
@@ -132,8 +125,8 @@ def update_heatmap(n_clicks, selected_groups, event_number):
         selected_detectors = []
 
     # Update detector visibility
-    for detector in filtered_detector_name_to_id_elements:
-        filtered_detector_name_to_id_elements[detector][-1] = detector in selected_detectors
+    for detector in detector_name_to_id_elements:
+        detector_name_to_id_elements[detector][-1] = detector in selected_detectors
 
     # Filter data for the updated event number
     filtered_ids, filtered_elements = filter_excluded(
@@ -144,7 +137,7 @@ def update_heatmap(n_clicks, selected_groups, event_number):
     return create_detector_heatmaps(
         filtered_ids,
         filtered_elements,
-        filtered_detector_name_to_id_elements,
+        detector_name_to_id_elements,
         max_elements,
     )
 
