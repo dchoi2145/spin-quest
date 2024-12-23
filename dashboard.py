@@ -2,7 +2,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, State, ALL
 from file_read import read_json, get_detector_info, find_first_non_empty, read_events, choose_root
-from plot import create_detector_heatmaps
+from plot import create_detector_heatmaps, create_video
 
 # CONSTANTS
 SPECTROMETER_INFO_PATH = "spectrometer.csv"
@@ -12,10 +12,7 @@ DETECTOR_MAP_FILE = "detector_map.json"
 detector_map = read_json(DETECTOR_MAP_FILE)
 
 # Flatten detector_map into group_to_detectors
-group_to_detectors = {}
-for category, groups in detector_map.items():
-    for group_name, detectors in groups.items():
-        group_to_detectors[group_name] = detectors
+group_to_detectors = {group_name: detectors for category, groups in detector_map.items() for group_name, detectors in groups.items()}
 
 # Get detector info
 detector_name_to_id_elements, max_elements = get_detector_info(SPECTROMETER_INFO_PATH)
@@ -26,29 +23,23 @@ initial_event_number = find_first_non_empty(detector_ids)
 excluded_detectors = ["D1V", "D1Vp", "D1X", "D1Xp", "D1U", "D1Up"]
 excluded_detector_ids = [detector_name_to_id_elements[d][0] for d in excluded_detectors if d in detector_name_to_id_elements]
 
-# Filter out excluded detectors from the event data
-def filter_excluded(detector_ids, element_ids, excluded_ids):
-    filtered_detector_ids = []
-    filtered_element_ids = []
-
-    for det_id, elem_id in zip(detector_ids, element_ids):
-        if det_id not in excluded_ids:
-            filtered_detector_ids.append(det_id)
-            filtered_element_ids.append(elem_id)
-
-    return filtered_detector_ids, filtered_element_ids
+# Create video if user requests it 
+video_response = input("Do you want to process the events in this root file into a video? (y/n): ")
+if video_response.lower() == 'y':
+    video_name = input("What name do you want the video to be? (NO FILE EXTENSION): ")
+    create_video(detector_ids, element_ids, detector_name_to_id_elements, max_elements, initial_event_number, excluded_detector_ids, video_name + ".mp4")
+    print("Done!")
 
 # Filter initial event data
-filtered_detector_ids, filtered_element_ids = filter_excluded(
-    detector_ids[initial_event_number], element_ids[initial_event_number], excluded_detector_ids
-)
+initial_detector_ids, initial_element_ids = detector_ids[initial_event_number], element_ids[initial_event_number]
 
 # Generate initial heatmap
 main_heatmap = create_detector_heatmaps(
-    filtered_detector_ids,
-    filtered_element_ids,
+    initial_detector_ids,
+    initial_element_ids,
     detector_name_to_id_elements,
     max_elements,
+    excluded_detector_ids
 )
 
 # Initialize Dash app
@@ -82,7 +73,7 @@ def layout():
             dbc.Row([
                 dbc.Col([
                     html.Label("Select Event Number:", className="me-2"),
-                    dcc.Input(id="event-number-input", type="number", value=initial_event_number, min=1, step=1),
+                    dcc.Input(id="event-number-input", type="number", value=initial_event_number, min=0, step=1),
                     dbc.Button("Update Plot", id="update-button", color="primary", className="ms-2"),
                 ], width=12, className="text-center mb-2"),
             ]),
@@ -128,17 +119,13 @@ def update_heatmap(n_clicks, selected_groups, event_number):
     for detector in detector_name_to_id_elements:
         detector_name_to_id_elements[detector][-1] = detector in selected_detectors
 
-    # Filter data for the updated event number
-    filtered_ids, filtered_elements = filter_excluded(
-        detector_ids[event_number], element_ids[event_number], excluded_detector_ids
-    )
-
     # Generate new heatmap
     return create_detector_heatmaps(
-        filtered_ids,
-        filtered_elements,
+        detector_ids[event_number],
+        element_ids[event_number],
         detector_name_to_id_elements,
         max_elements,
+        excluded_detector_ids
     )
 
 if __name__ == "__main__":

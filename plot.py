@@ -1,9 +1,18 @@
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.io as pio
+import cv2 
+import os 
+import shutil 
+from tqdm import tqdm
 from plotly.subplots import make_subplots
+from file_read import filter_excluded
 
 # Function to create individual heatmaps for each detector
-def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements, max_element_id):
+def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements, max_element_id, excluded_detector_ids):
+    # Filter data
+    detector_ids, element_ids = filter_excluded(detector_ids, element_ids, excluded_detector_ids)
+
     # Convert data to a DataFrame
     data = {'Detector': detector_ids, 'Element': element_ids, 'Hit': [1] * len(detector_ids)}
     df = pd.DataFrame(data)
@@ -96,3 +105,32 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements, max
     )
 
     return fig
+
+def create_video(detector_ids, element_ids, detector_name_to_id_elements, max_element_id, initial_event_number, excluded_detector_ids, video_name):
+    # create directory for storing images if it doesn't exist already
+    directory = "temp_directory_xyz123"
+    os.makedirs(directory, exist_ok=True)
+
+    # populate directory with heatmap frames 
+    print("Generating frames...")
+    for event_number in tqdm(range(initial_event_number, len(detector_ids))):
+        fig = create_detector_heatmaps(detector_ids[event_number], element_ids[event_number], detector_name_to_id_elements, max_element_id, excluded_detector_ids)
+        pio.write_image(fig, os.path.join(directory, "frame{}.png".format(event_number - initial_event_number + 1)))
+
+    # convert directory of frames into video
+    images = os.listdir(directory)
+    frame = cv2.imread(os.path.join(directory, images[0]))
+    height, width, layers = frame.shape
+
+    video = cv2.VideoWriter(video_name, 0, 1, (width,height))
+
+    print("Converting frames to video...")
+    for image in tqdm(images):
+        video.write(cv2.imread(os.path.join(directory, image)))
+
+    cv2.destroyAllWindows()
+    video.release()
+
+    # remove temp directory of heatmap frames 
+    print("Cleaning up files...")
+    shutil.rmtree(directory)

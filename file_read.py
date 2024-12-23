@@ -56,6 +56,18 @@ def find_first_non_empty(arr):
         
     return -1
 
+# Filter out excluded detectors from the event data
+def filter_excluded(detector_ids, element_ids, excluded_ids):
+    filtered_detector_ids = []
+    filtered_element_ids = []
+
+    for det_id, elem_id in zip(detector_ids, element_ids):
+        if det_id not in excluded_ids:
+            filtered_detector_ids.append(det_id)
+            filtered_element_ids.append(elem_id)
+
+    return filtered_detector_ids, filtered_element_ids
+
 # Function for asking for user input
 def choose_option(options):
     while True:
