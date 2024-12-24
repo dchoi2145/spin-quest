@@ -36,18 +36,16 @@ def create_detector_heatmaps(detector_ids, element_ids, name_to_id_elements, max
         # Create hit matrix
         z_matrix = [[0] for _ in range(max_element_id)]
         block_height = int(max_element_id / num_elements)
-        hover_text = [[f"Element ID: {i//block_height}, -"] for i in range(max_element_id)]
         
         # Fill hits
         for _, row in detector_data.iterrows():
-            element_idx = int(row['Element'])
+            element_idx = int(row['Element']) - 1 # make 0-indexed
             if 0 <= element_idx < num_elements:
                 start_idx = element_idx * block_height
                 end_idx = start_idx + block_height
                 for i in range(start_idx, end_idx):
                     if i < max_element_id:
                         z_matrix[i] = [1]
-                        hover_text[i] = [f"Element ID: {element_idx}, Hit"]
         
         fig.add_trace(
             go.Heatmap(
