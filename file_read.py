@@ -95,7 +95,7 @@ def read_events(file_path):
             if "elementID" in key:
                 element_id_branches.append(key)
 
-
+        # select specific branches if there are too many 
         if len(detector_id_branches) == 0 or len(element_id_branches) == 0:
             raise Exception("Error: Not enough branches found.")
         if len(detector_id_branches) > 1:
