@@ -67,24 +67,28 @@ def choose_option(options):
     
     return choice
 
+# Find tree in ROOT file
+def find_tree(file):
+    # use user input to find tree
+    tree_names = file.keys()
+    if len(tree_names) == 0:
+        raise Exception("No trees found in ROOT file.")
+    
+    print("Trees found in file: ")
+    for i, tree_name in enumerate(tree_names, 1):
+        print("{}. ".format(i) + tree_name)
+    choice = choose_option(tree_names)
+
+    return file[tree_names[choice]]
+
 # Function that reads events from ROOT file
 def read_events(file_path):
     detector_ids = []
     element_ids = []
 
     with uproot.open(file_path) as file:
-        # use user input to find tree
-        tree_names = file.keys()
-        if len(tree_names) == 0:
-            raise Exception("No trees found in ROOT file.")
-        
-        print("Trees found in file: ")
-        for i, tree_name in enumerate(tree_names, 1):
-            print("{}. ".format(i) + tree_name)
-        choice = choose_option(tree_names)
-        
         # get tree 
-        tree = file[tree_names[choice]]
+        tree = find_tree(file)
 
         # get branches
         detector_id_branches, element_id_branches = [], []
