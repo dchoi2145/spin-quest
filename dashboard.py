@@ -15,7 +15,8 @@ detector_map = read_json(DETECTOR_MAP_FILE)
 group_to_detectors = {group_name: detectors for category, groups in detector_map.items() for group_name, detectors in groups.items()}
 
 # Get detector info
-detector_name_to_id_elements, max_elements = get_detector_info(SPECTROMETER_INFO_PATH)
+detector_name_to_id_elements = get_detector_info(SPECTROMETER_INFO_PATH)
+max_elements = max([detector_name_to_id_elements[detector_name][1] for detector_name in detector_name_to_id_elements])
 detector_ids, element_ids = read_events(choose_root())
 initial_event_number = find_first_non_empty(detector_ids)
 
