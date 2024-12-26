@@ -53,31 +53,79 @@ def join_momentum_arrays(gpx, gpy, gpz):
     return np.array(joined_events)
 
 if __name__ == "__main__":
-    root_file = choose_root()
-    print("Reading in hit matrix...")
-    detector_ids, element_ids = read_events(root_file)
-    print("Reading momentum matrices...")
-    gpx, gpy, gpz = read_momentum(root_file)
+    # List of all .root files to process
+    root_files = [
+        "runs/trackQA1.root",
+        "runs/trackQA2.root",
+        "runs/trackQA3.root",
+        "runs/trackQA4.root",
+        "runs/trackQA5.root",
+        "runs/trackQA6.root",
+        "runs/trackQA7.root",
+        "runs/trackQA8.root",
+        "runs/trackQA9.root"
+    ]
+
+    all_detector_ids = []
+    all_element_ids = []
+    all_gpx = []
+    all_gpy = []
+    all_gpz = []
+
+    # Loop through each file and aggregate data
+    for root_file in root_files:
+        print(f"Processing file: {root_file}")
+        
+        # Read detector and element IDs from the file
+        detector_ids, element_ids = read_events(root_file)
+        all_detector_ids.append(detector_ids)
+        all_element_ids.append(element_ids)
+        
+        # Read momentum values from the file
+        gpx, gpy, gpz = read_momentum(root_file)
+        all_gpx.append(gpx)
+        all_gpy.append(gpy)
+        all_gpz.append(gpz)
+
+    # Concatenate all the data
+    print("Concatenating data...")
+    all_detector_ids = np.concatenate(all_detector_ids)
+    all_element_ids = np.concatenate(all_element_ids)
+    all_gpx = np.concatenate(all_gpx)
+    all_gpy = np.concatenate(all_gpy)
+    all_gpz = np.concatenate(all_gpz)
 
     # process spectrometer file and get max detector/element id
+    print("Processing spectrometer file...")
     detector_name_to_id_elements = get_detector_info(SPECTROMETER_INFO_PATH)
     max_detector_id = max([detector_name_to_id_elements[name][0] for name in detector_name_to_id_elements])
     max_element_id = max([detector_name_to_id_elements[name][1] for name in detector_name_to_id_elements])
 
     # filter out data beyond max detector id and max element id
-    detector_ids = np.where(detector_ids <= max_detector_id, detector_ids, 0) 
-    element_ids = np.where(element_ids <= max_element_id, element_ids, 0)
+    print("Filtering data...")
+    all_detector_ids = np.where(all_detector_ids <= max_detector_id, all_detector_ids, 0)
+    all_element_ids = np.where(all_element_ids <= max_element_id, all_element_ids, 0)
 
     # process root data into hit matrices\
-    hit_matrices = convert_to_hit_matrices(detector_ids, element_ids, max_detector_id, max_element_id)
+    print("Converting to hit matrices...")
+    hit_matrices = convert_to_hit_matrices(all_detector_ids, all_element_ids, max_detector_id, max_element_id)
 
-    # process momentum lists into one big array
-    labels = join_momentum_arrays(gpx, gpy, gpz)
+    # process momentum lists into one big array (labels)
+    print("Joining momentum arrays...")
+    labels = join_momentum_arrays(all_gpx, all_gpy, all_gpz)
 
-    # create DNN
+    # create and compile the TensorFlow model
+    print("Creating model...")
     model = create_model()
     model_loss = tf.keras.losses.MeanSquaredError()
     model.compile(optimizer='adam', loss=model_loss, metrics=["mean_squared_error"])
 
-    # train DNN
+    # train the model
+    print("Training model...")
     model.fit(hit_matrices, labels, epochs=5)
+
+    print("Training complete!")
+
+    model_save_path = "models/hit_to_momentum_model.keras"
+    model.save(model_save_path)
+    print(f"Model saved at {model_save_path}")
