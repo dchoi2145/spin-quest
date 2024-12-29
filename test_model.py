@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 from file_read import read_events, get_detector_info
 from reconstruct import read_momentum, convert_to_hit_matrices, join_momentum_arrays
+import matplotlib.pyplot as plt
 
 # CONSTANTS
 SPECTROMETER_INFO_PATH = "spectrometer.csv"
@@ -63,3 +64,24 @@ print(f"Mean Squared Error: {mse}")
 predictions = model.predict(test_hit_matrices)
 print(f"Predictions: {predictions[:5]}")
 print(f"Actual: {test_labels[:5]}")
+
+# Calculate residuals for gpx, gpy, gpz
+residuals_gpx = test_labels[:, :len(test_labels[0])//3] - predictions[:, :len(predictions[0])//3]
+residuals_gpy = test_labels[:, len(test_labels[0])//3:2*len(test_labels[0])//3] - predictions[:, len(predictions[0])//3:2*len(predictions[0])//3]
+residuals_gpz = test_labels[:, 2*len(test_labels[0])//3:] - predictions[:, 2*len(predictions[0])//3:]
+
+# Plot histograms of residuals
+def plot_residual_histogram(residuals, component_name):
+    plt.hist(residuals.flatten(), bins=50, alpha=0.7, label=f"{component_name} Residuals")
+    plt.axvline(0, color='red', linestyle='--', label='Zero Error')
+    plt.xlabel("Residuals")
+    plt.ylabel("Frequency")
+    plt.title(f"Residual Histogram for {component_name}")
+    plt.legend()
+    plt.show()
+
+plot_residual_histogram(residuals_gpx, "gpx")
+plot_residual_histogram(residuals_gpy, "gpy")
+plot_residual_histogram(residuals_gpz, "gpz")
+
+
