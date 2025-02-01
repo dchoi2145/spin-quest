@@ -4,15 +4,13 @@ import tensorflow as tf
 from scipy.sparse import csr_matrix
 import matplotlib.pyplot as plt
 import os
-
-# NEW: For scaling
 from sklearn.preprocessing import StandardScaler
 
 # Muon mass in GeV (adjust if needed)
 MUON_MASS = 0.10566  # Adding mass of muon for calculating E
 
 # Constants
-FILE_PATH = r"C:\Users\dchoi\Documents\GitHub\spin-quest\runs\trackQA1.root"  
+FILE_PATH = '/Users/davidchoi/Documents/GitHub/spin-quest/trial4/1/trackQA.root'  
 OUTPUT_FILE = "processed_data_per_track.npz"  # File where processed data will be saved
 MAX_IDS = 100  # Max value for detector and element IDs
 PLOTS_DIR = "residual_plots"  # Directory to save residual plots
@@ -26,71 +24,44 @@ def load_data(file_path):
         data = tree.arrays(branches, library="np")
     return data
 
-# This function splits data from each event into tracks. For each track, it creates:
-# A sparse hit matrix (detector vs. element) and Average momentum values (px, py, pz) and energy (E).
-def create_trackwise_data(detector_ids, element_ids, n_tracks, gpx, gpy, gpz, max_ids):
+# Replacing manual track splitting with a machine learning model
+def build_track_segmentation_model(input_shape):
+    model = tf.keras.Sequential([
+        tf.keras.layers.Conv2D(32, (3,3), activation='relu', input_shape=input_shape),
+        tf.keras.layers.MaxPooling2D((2,2)),
+        tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+        tf.keras.layers.MaxPooling2D((2,2)),
+        tf.keras.layers.Conv2D(128, (3,3), activation='relu'),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(256, activation='relu'),
+        tf.keras.layers.Dense(MAX_IDS, activation='softmax')  # Predict track assignments
+    ])
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    return model
 
+def predict_trackwise_data(detector_ids, element_ids, n_tracks, max_ids, model):
     track_hit_matrices = []  # List to hold matrices of hits for each track
-    track_momenta = []  # List to hold momenta for each track
-
     num_events = len(detector_ids)  # Number of events in the dataset
 
     for evt_index in range(num_events):
-        # Extracting data for the current event
-        event_det = detector_ids[evt_index]  # detector IDs for the event
-        event_elem = element_ids[evt_index]  # element IDs for the event
-        num_tracks = n_tracks[evt_index]  # number of tracks in the event
-        event_gpx = gpx[evt_index]  # x-component of momentum
-        event_gpy = gpy[evt_index]  # y-component of momentum
-        event_gpz = gpz[evt_index]  # z-component of momentum
+        event_det = detector_ids[evt_index]
+        event_elem = element_ids[evt_index]
+        num_tracks = n_tracks[evt_index]
 
-        # Handle cases where there are no tracks by treating the whole event as one track
-        hits_per_track = len(event_det) // num_tracks if num_tracks > 0 else len(event_det)
+        # Create a sparse matrix to represent hits
+        mat = csr_matrix((max_ids, max_ids), dtype=np.float32)
+        for d, e in zip(event_det, event_elem):
+            if 0 < d <= max_ids and 0 < e <= max_ids:
+                mat[d - 1, e - 1] = 1
+        
+        # Convert sparse matrix to dense format and reshape for input
+        input_data = mat.toarray().reshape(1, max_ids, max_ids, 1)
+        predicted_tracks = model.predict(input_data)[0]  # Predict track assignments
 
-        for t in range(num_tracks):
-            # Slicing hits for the current track
-            start_idx = t * hits_per_track
-            end_idx = (t + 1) * hits_per_track
-
-            # Skip empty or invalid slices
-            if end_idx <= start_idx:
-                continue
-
-            det_for_t = event_det[start_idx:end_idx]
-            elem_for_t = event_elem[start_idx:end_idx]
-            if len(det_for_t) == 0:
-                continue
-
-            # Create a sparse matrix to represent hits
-            mat = csr_matrix((max_ids, max_ids), dtype=np.float32)
-            for d, e in zip(det_for_t, elem_for_t):
-                if 0 < d <= max_ids and 0 < e <= max_ids:
-                    mat[d - 1, e - 1] = 1
-
-            # Calculate average px, py, pz for the current track
-            px_slice = event_gpx[start_idx:end_idx]
-            py_slice = event_gpy[start_idx:end_idx]
-            pz_slice = event_gpz[start_idx:end_idx]
-            if len(px_slice) == 0:
-                continue
-
-            px_avg = np.mean(px_slice)
-            py_avg = np.mean(py_slice)
-            pz_avg = np.mean(pz_slice)
-
-            # Skip if the averages are NaN
-            if np.isnan(px_avg) or np.isnan(py_avg) or np.isnan(pz_avg):
-                continue
-
-            # Compute energy (E) using the muon mass and momentum components
-            p_sq = px_avg**2 + py_avg**2 + pz_avg**2
-            E = np.sqrt(p_sq + MUON_MASS**2)
-
-            # Add to the lists
-            track_hit_matrices.append(mat)
-            track_momenta.append([px_avg, py_avg, pz_avg, E])  # Store 4-momentum
-
-    return track_hit_matrices, np.array(track_momenta, dtype=np.float32)
+        # Store predicted track hit matrices
+        track_hit_matrices.append(predicted_tracks)
+    
+    return np.array(track_hit_matrices, dtype=np.float32)
 
 # Create a neural network to predict 4 outputs: px, py, pz, E.
 def build_momentum_model(input_dim, output_dim=4):
@@ -140,77 +111,53 @@ def plot_residuals(predicted, true, output_dir):
 def main():
     print("Loading data from the file...")
     data = load_data(FILE_PATH)
-
-    # Check for NaNs or empty branches in the data
-    for key, value in data.items():
-        try:
-            has_nans = np.isnan(value).any() if np.issubdtype(value.dtype, np.number) else False
-        except Exception as e:
-            has_nans = f"Error: {e}"
-        is_empty = (len(value) == 0)
-        print(f"{key}: NaNs present: {has_nans}, Empty: {is_empty}")
-
-    print("Splitting each event into per-track hits...")
-    track_hit_matrices, track_momenta = create_trackwise_data(
-        data['detectorID'], data['elementID'], data['n_tracks'],
-        data['gpx'], data['gpy'], data['gpz'],
-        MAX_IDS
+    
+    # Filter events with at least one track to align X and y
+    valid_events = data['n_tracks'] >= 1
+    detector_ids = data['detectorID'][valid_events]
+    element_ids = data['elementID'][valid_events]
+    n_tracks = data['n_tracks'][valid_events]
+    
+    # Extract true momenta (using first track in each event)
+    px = np.array([evt[0] for evt in data['gpx'][valid_events]])
+    py = np.array([evt[0] for evt in data['gpy'][valid_events]])
+    pz = np.array([evt[0] for evt in data['gpz'][valid_events]])
+    E = np.sqrt(px**2 + py**2 + pz**2 + MUON_MASS**2)
+    y = np.vstack([px, py, pz, E]).T  # Target array [px, py, pz, E]
+    
+    print("Building and training the track segmentation model...")
+    input_shape = (MAX_IDS, MAX_IDS, 1)
+    track_segmentation_model = build_track_segmentation_model(input_shape)
+    
+    print("Predicting track assignments...")
+    track_hit_matrices = predict_trackwise_data(
+        detector_ids, element_ids, n_tracks, MAX_IDS, track_segmentation_model
     )
-    print(f"Number of valid (non-empty) track samples: {len(track_hit_matrices)}")
-
-    print("Converting sparse matrices to dense format...")
-    dense_mats = np.array([m.toarray() for m in track_hit_matrices], dtype=np.float32)
-
+    
     print("Flattening track-level hit matrices...")
-    flattened_hits = dense_mats.reshape(len(dense_mats), -1)
-
-    print("Saving processed track-level data for reference...")
-    np.savez(OUTPUT_FILE, hits=flattened_hits, momenta=track_momenta)
-
-    # Remove rows with NaNs from inputs and outputs
-    is_nan_input = np.isnan(flattened_hits).any(axis=1)
-    is_nan_label = np.isnan(track_momenta).any(axis=1)
-    valid_mask = ~(is_nan_input | is_nan_label)
-
-    flattened_hits_clean = flattened_hits[valid_mask]
-    track_momenta_clean = track_momenta[valid_mask]
-    print(f"After final cleaning: {len(flattened_hits_clean)} samples remain.")
-
-    # Scale inputs and outputs
-    print("Scaling inputs and outputs with StandardScaler...")
+    flattened_hits = track_hit_matrices.reshape(len(track_hit_matrices), -1)
+    
+    print("Scaling inputs with StandardScaler...")
     input_scaler = StandardScaler()
-    X_scaled = input_scaler.fit_transform(flattened_hits_clean)
-
-    output_scaler = StandardScaler()
-    Y_scaled = output_scaler.fit_transform(track_momenta_clean)
-
+    X_scaled = input_scaler.fit_transform(flattened_hits)
+    
     print("Building the momentum model (4 outputs => px, py, pz, E)...")
     input_dim = X_scaled.shape[1]
     momentum_model = build_momentum_model(input_dim=input_dim, output_dim=4)
 
-    print("Training the momentum model on scaled track-level data...")
+    print("Training the momentum model on track-level data...")
+    # Train with true momenta as targets
     history = momentum_model.fit(
-        X_scaled, Y_scaled,
+        X_scaled, y,  # Use y (true momenta) as targets
         epochs=20,
         batch_size=64,
         verbose=1,
         validation_split=0.2
     )
 
-    # Evaluate in scaled space
-    scaled_loss, scaled_mse = momentum_model.evaluate(X_scaled, Y_scaled, verbose=1)
-    print(f"\nMSE in scaled space: {scaled_mse}")
-
-    print("Converting predictions back to original momentum units...")
-    predictions_scaled = momentum_model.predict(X_scaled)
-    predictions_phys = output_scaler.inverse_transform(predictions_scaled)
-
-    residuals = predictions_phys - track_momenta_clean
-    raw_mse = np.mean((residuals)**2)
-    print(f"MSE in original (unscaled) space: {raw_mse}")
-
-    print("Plotting residuals for each component (px, py, pz, E)...")
-    plot_residuals(predictions_phys, track_momenta_clean, PLOTS_DIR)
+    print("Generating predictions and residual plots...")
+    predictions = momentum_model.predict(X_scaled)
+    plot_residuals(predictions, y, PLOTS_DIR)
 
     print("Done!")
 
